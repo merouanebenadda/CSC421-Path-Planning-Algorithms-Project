@@ -1,4 +1,5 @@
 #pragma once
+
 #include <vector>
 
 struct Point{
@@ -18,5 +19,8 @@ public:
     double radius;
 
     std::vector<Obstacle> obstacles; // list of obstacles in the environment
+
+    bool isCollision(Point& p1, Point& p2){}; // checks if the line segment between p1 and p2 collides with any obstacles
+    bool isCollision(std::vector<Point>& path){}; // checks if a given path collides with any obstacles
 };
 
