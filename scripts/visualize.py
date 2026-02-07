@@ -70,6 +70,7 @@ def visualize(scenario_file, path_file=None):
 
 
 def main():
+    # Set up argument parser
     parser = argparse.ArgumentParser(description="Visualize the environment and path.")
     parser.add_argument("scenario", help="Path to the problem file.")
     parser.add_argument("--path", help="Path to the file containing the path", default=None)
