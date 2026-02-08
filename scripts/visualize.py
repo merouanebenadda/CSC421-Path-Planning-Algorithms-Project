@@ -56,7 +56,7 @@ def visualize(scenario_file, path_file=None):
             print("Error: Invalid path file format.")
             return
         
-        path_points = [(path_nums[i], path_nums[i+1]) for i in range(0, len(path_nums), 2)]
+        path_points = [start1] + [(path_nums[i], path_nums[i+1]) for i in range(0, len(path_nums), 2)] + [goal1]
         path_x, path_y = zip(*path_points)
         ax.plot(path_x, path_y, 'b-', label='Path')
 

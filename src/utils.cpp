@@ -1,7 +1,12 @@
 #include "utils.hpp"
 #include "Problem.hpp"
+#include <cmath>
 
-bool segmentsIntersect(Point& p1, Point& p2, Point& p3, Point& p4) {
+double euclideanDistance(const Point& p1, const Point& p2) {
+    return std::sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
+}
+
+bool segmentsIntersect(const Point& p1, const Point& p2, const Point& p3, const Point& p4) {
     // Compute the direction vectors of the segments
     double d1x = p2.x - p1.x;
     double d1y = p2.y - p1.y;
@@ -24,7 +29,7 @@ bool segmentsIntersect(Point& p1, Point& p2, Point& p3, Point& p4) {
     return (t1 >= 0 && t1 <= 1 && t2 >= 0 && t2 <= 1);
 }
 
-bool segmentIntersectsObstacle(Point& p1, Point& p2, const Obstacle& obs) {
+bool segmentIntersectsObstacle(const Point& p1, const Point& p2, const Obstacle& obs) {
     // Check if the segment intersects any of the four edges of the obstacle
     Point obsCorners[4] = {
         obs.ll_corner,
@@ -41,7 +46,7 @@ bool segmentIntersectsObstacle(Point& p1, Point& p2, const Obstacle& obs) {
     return false;
 }
 
-bool segmentIntersectsObstacles(Point& p1, Point& p2, std::vector<Obstacle>& obstacles) {
+bool segmentIntersectsObstacles(const Point& p1, const Point& p2, const std::vector<Obstacle>& obstacles) {
     for (const auto& obs : obstacles) {
         if (segmentIntersectsObstacle(p1, p2, obs)) {
             return true;

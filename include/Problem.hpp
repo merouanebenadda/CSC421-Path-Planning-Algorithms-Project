@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 struct Point{
     double x, y;
@@ -20,7 +21,8 @@ public:
 
     std::vector<Obstacle> obstacles; // list of obstacles in the environment
 
-    bool isCollision(Point& p1, Point& p2){}; // checks if the line segment between p1 and p2 collides with any obstacles
-    bool isCollision(std::vector<Point>& path){}; // checks if a given path collides with any obstacles
+    bool loadScenario(const std::string& filename); // loads problem data from a file
+    bool isCollision(const Point& p1, const Point& p2) const; // checks if the line segment between p1 and p2 collides with any obstacles
+    bool isCollision(const std::vector<Point>& path) const; // checks if a given path collides with any obstacles
 };
 

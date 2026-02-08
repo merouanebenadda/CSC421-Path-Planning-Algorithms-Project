@@ -2,8 +2,8 @@ projectINF421-2025.pdf
 # --- C++ Build Artifacts ---
 build/
 bin/
-*.o                     # Object files
-*.a                     # Static libraries
+*.o                     
+*.a
 *.so
 path_planner
 
@@ -11,7 +11,6 @@ path_planner
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
-Makefile
 
 # --- Python Junk ---
 __pycache__/
@@ -27,3 +26,6 @@ env/
 # --- Data Output ---
 *.txt
 !assets/scenarios/*.txt
+
+output/paths/*.txt
+!output/paths/.gitkeep

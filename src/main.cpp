@@ -1,85 +1,59 @@
 #include <iostream>
 #include <fstream> // for file handling
 #include <string>
+#include <random>
 
 #include "Problem.hpp"
+#include "PSO.hpp"
 
 using namespace std;
 
 int main(int argc, char* argv[]){
-    // Check if the user provided a filename as an argument
-    if (argc < 2) {
-        cerr << "Error: No filename provided" << endl;
+    srand(time(0)); // Seed the random number generator
+
+    if (argc < 2 || argc > 3) {
+        cerr << "Usage: " << argv[0] << " <scenario_file> [--plot]" << endl;
         return 1;
     }
 
-    string filename = argv[1];
-
-    // Open the file for reading
-    ifstream inputFile(filename);
-    if (!inputFile.is_open()) {
-        cerr << "Error: Could not open file " << filename << endl;
-        return 1;
-    }
-
-    // Read the contents of the scenario file and check for errors
+    // Load problem scenario
     Problem problem;
-    if (!(inputFile >> problem.x_max >> problem.y_max >> problem.start1.x >> problem.start1.y 
-                    >> problem.goal1.x >> problem.goal1.y 
-                    >> problem.start2.x >> problem.start2.y 
-                    >> problem.goal2.x >> problem.goal2.y 
-                    >> problem.radius)) {
-        cerr << "Error: Invalid file format" << endl;
+    if (!problem.loadScenario(argv[1])) {
+        cerr << "Failed to load scenario from file: " << argv[1] << endl;
         return 1;
     }
 
-    // Check for valid dimensions and radius
-    if (problem.x_max <= 0 || problem.y_max <= 0) {
-        cerr << "Error: Invalid environment dimensions" << endl;
-        return 1;
-    }
-    if (problem.radius < 0) {
-        cerr << "Error: Invalid radius" << endl;
-        return 1;
-    }
-    if (problem.start1.x < 0 || problem.start1.x > problem.x_max || problem.start1.y < 0 || problem.start1.y > problem.y_max ||
-        problem.goal1.x < 0 || problem.goal1.x > problem.x_max || problem.goal1.y < 0 || problem.goal1.y > problem.y_max ||
-        problem.start2.x < 0 || problem.start2.x > problem.x_max || problem.start2.y < 0 || problem.start2.y > problem.y_max ||
-        problem.goal2.x < 0 || problem.goal2.x > problem.x_max || problem.goal2.y < 0 || problem.goal2.y > problem.y_max) {
-        cerr << "Error: Start or goal positions are out of bounds" << endl;
-        return 1;
+    // PSO optimization
+    PSO pso(problem, 100, 5); // Optionally, you can specify num_particles and num_waypoints here
+    auto [best_path, best_cost] = pso.optimize(problem, 100000); // Optimize for 10000 iterations
+
+    // Output results
+    cout << "Best path found:" << endl;
+    for (const auto& point : best_path) {
+        cout << "(" << point.x << ", " << point.y << ")" << endl;
     }
 
+    cout << "Best cost: " << best_cost << endl;
 
-    double x, y, lx, ly;
-    while (inputFile >> x >> y >> lx >> ly) {
-        if (lx <= 0 || ly <= 0) {
-            cerr << "Error: Invalid obstacle dimensions" << endl;
-            return 1;
+    // Save results to a file for visualization
+    string outputFileName = "output/paths/best_path" + to_string(time(0)) + ".txt";
+    ofstream outputFile(outputFileName);
+    if (outputFile.is_open()) {
+        for (const auto& point : best_path) {
+            outputFile << point.x << " " << point.y << endl;
         }
-
-        if (x < 0 || x > problem.x_max || y < 0 || y > problem.y_max) {
-            cerr << "Error: Obstacle position is out of bounds" << endl;
-            return 1;
-        }
-
-        if (x + lx > problem.x_max || y + ly > problem.y_max) {
-            cerr << "Error: Obstacle exceeds environment bounds" << endl;
-            return 1;
-        }
-
-        Obstacle obs;
-        obs.ll_corner = Point(x, y); 
-        obs.lx = lx;
-        obs.ly = ly;
-        problem.obstacles.push_back(obs);
+        outputFile.close();
+        cout << "Best path saved to " << outputFileName << endl;
+    } else {
+        cerr << "Error: Could not open file to save best path" << endl;
     }
 
-    if (!inputFile.eof()) {
-        cerr << "Error: Invalid file format in obstacles" << endl;
-        return 1;
+    // Optional: Visualization
+    if (argc == 3 && string(argv[2]) == "--plot") {
+        // Call the visualization script
+        system(("python3 scripts/visualize.py " + string(argv[1])
+         + " --path " + outputFileName).c_str()); // c_str() converts the string to a C-style string for system()
     }
-
 
     return 0;
 }

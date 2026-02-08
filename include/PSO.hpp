@@ -1,6 +1,7 @@
 #pragma once
 #include "Problem.hpp"
 #include <vector>
+#include <utility>
 #include <random>
 
 // Hyperparameters for PSO
@@ -17,15 +18,19 @@ struct Particle{
     std::vector<Point> best_waypoints;
     double best_cost;
 
-    Particle(const Problem& problem); 
+    Particle(const Problem& problem, int num_waypoints = NUM_WAYPOINTS); 
 };
 
 class PSO{
 public:
+    std::vector<Particle> particles;
     std::vector<Point> global_best_waypoints;
     double global_best_cost;
 
-    PSO(const Problem& problem);
+    PSO(const Problem& problem, int num_particles = NUM_PARTICLES, int num_waypoints = NUM_WAYPOINTS);
+
+    std::pair<std::vector<Point>, double> optimize(const Problem& problem, int num_iterations,
+    double c1 = C1, double c2 = C2, double w = W);
 };
 
 double fitness(const std::vector<Point>& waypoints, const Problem& problem);
