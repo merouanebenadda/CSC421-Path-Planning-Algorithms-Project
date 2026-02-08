@@ -8,7 +8,8 @@
 
 using namespace std;
 
-int main(int argc, char* argv[]){
+// Function to test the PSO implementation
+int test_pso(int argc, char* argv[]){
     srand(time(0)); // Seed the random number generator
 
     if (argc < 2 || argc > 3) {
@@ -51,9 +52,14 @@ int main(int argc, char* argv[]){
     // Optional: Visualization
     if (argc == 3 && string(argv[2]) == "--plot") {
         // Call the visualization script
-        system(("python3 scripts/visualize.py " + string(argv[1])
+        int result = system(("python3 scripts/visualize.py " + string(argv[1])
          + " --path " + outputFileName).c_str()); // c_str() converts the string to a C-style string for system()
+        if (result != 0) cerr << "Visualizer failed to launch." << endl;
     }
 
     return 0;
+}
+
+int main(int argc, char* argv[]) {
+    return test_pso(argc, argv);
 }
