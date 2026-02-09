@@ -8,6 +8,37 @@
 
 using namespace std;
 
+/*
+@brief saves the given path to a file and optionally visualizes it using a Python script if --plot flag is provided.
+@param argc the number of command-line arguments
+@param argv the array of command-line arguments
+@param path the vector of Points representing the path to be saved and visualized
+*/
+void visualize(int argc, char* argv[], vector<Point> path){
+    // Save results to a file for visualization
+    string outputFileName = "output/paths/best_path" + to_string(time(0)) + ".txt";
+    ofstream outputFile(outputFileName);
+    if (outputFile.is_open()) {
+        for (const auto& point : path) {
+            outputFile << point.x << " " << point.y << endl;
+        }
+        outputFile.close();
+        cout << "Best path saved to " << outputFileName << endl;
+    } else {
+        cerr << "Error: Could not open file to save best path" << endl;
+    }
+
+    // Optional: Visualization
+    if (argc == 3 && string(argv[2]) == "--plot") {
+        // Call the visualization script
+        int result = system(("python3 scripts/visualize.py " + string(argv[1])
+         + " --path " + outputFileName).c_str()); // c_str() converts the string to a C-style string for system()
+        if (result != 0) cerr << "Visualizer failed to launch." << endl;
+    }
+}
+
+// Test functions
+
 // Function to test the PSO implementation
 int test_pso(int argc, char* argv[]){
     srand(time(0)); // Seed the random number generator
@@ -36,27 +67,8 @@ int test_pso(int argc, char* argv[]){
 
     cout << "Best cost: " << best_cost << endl;
 
-    // Save results to a file for visualization
-    string outputFileName = "output/paths/best_path" + to_string(time(0)) + ".txt";
-    ofstream outputFile(outputFileName);
-    if (outputFile.is_open()) {
-        for (const auto& point : best_path) {
-            outputFile << point.x << " " << point.y << endl;
-        }
-        outputFile.close();
-        cout << "Best path saved to " << outputFileName << endl;
-    } else {
-        cerr << "Error: Could not open file to save best path" << endl;
-    }
 
-    // Optional: Visualization
-    if (argc == 3 && string(argv[2]) == "--plot") {
-        // Call the visualization script
-        int result = system(("python3 scripts/visualize.py " + string(argv[1])
-         + " --path " + outputFileName).c_str()); // c_str() converts the string to a C-style string for system()
-        if (result != 0) cerr << "Visualizer failed to launch." << endl;
-    }
-
+    visualize(argc, argv, best_path);
     return 0;
 }
 
