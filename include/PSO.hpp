@@ -11,6 +11,7 @@ struct Particle{
     std::vector<Point> velocity; 
     std::vector<Point> best_waypoints;
     double best_cost;
+    int stagnation_counter;
 
     Particle(const Problem& problem, int num_waypoints); 
 };
@@ -31,6 +32,9 @@ public:
 
     std::pair<std::vector<Point>, double> optimize_with_annealing(const Problem& problem, int num_iterations,
     double c1, double c2, double w, int restart_interval, double initial_temp, double cooling_rate);
+
+    std::pair<std::vector<Point>, double> optimize_with_dimensional_learning(const Problem& problem, int num_iterations,
+    double c1, double c2, double w, int restart_interval, double initial_temp, double cooling_rate, int stagnation_threshold);
 };
 
 double fitness(const std::vector<Point>& waypoints, const Problem& problem);

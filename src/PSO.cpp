@@ -9,7 +9,7 @@
 // CONSTANTS
 const double INF = 1e9;
 
-Particle::Particle(const Problem& problem, int num_waypoints) : best_cost(INF) {
+Particle::Particle(const Problem& problem, int num_waypoints) : best_cost(INF), stagnation_counter(0) {
     // Initialize waypoints randomly within the environment bounds
     for (int i = 0; i < num_waypoints; ++i) {
         double x = static_cast<double>(rand()) / RAND_MAX * problem.x_max;
@@ -255,7 +255,128 @@ std::pair<std::vector<Point>, double> PSO::optimize_with_annealing(const Problem
         
     
     return {final_best_waypoints, final_best_cost};
-} 
+}
+
+/*
+This variant includes random restarts, annealing, and dimensional learning
+*/
+std::pair<std::vector<Point>, double> PSO::optimize_with_dimensional_learning(const Problem& problem, int num_iterations,
+    double c1, double c2, double w, int restart_interval, double initial_temp, double cooling_rate, int stagnation_threshold) {
+    double temperature = initial_temp;
+    int num_particles = particles.size();
+    std::vector<Point> final_best_waypoints = global_best_waypoints;
+    double final_best_cost = global_best_cost;
+
+    // Ensure global_best_waypoints is initialized
+    if (global_best_waypoints.empty() && !particles.empty()) {
+        global_best_waypoints = particles[0].waypoints;
+    }
+
+    for (int iter = 0; iter < num_iterations; ++iter) {
+        // Random restart logic
+        if (iter > 0 && iter % restart_interval == 0) {
+            // Randomly reinitialize particles
+            particles.clear();
+            for (int i = 0; i < num_particles; ++i) {
+                particles.emplace_back(problem, global_best_waypoints.size());
+            }
+            // Update final best if current global best is better
+            if (final_best_cost > global_best_cost) {
+                final_best_cost = global_best_cost;
+                final_best_waypoints = global_best_waypoints;
+            }
+            // Reset global best for the new set of particles
+            global_best_cost = INF;
+            if (!particles.empty()) {
+                global_best_waypoints = particles[0].waypoints;
+            }
+        }
+
+        for (auto& particle : particles) {
+            // Update particle's best known position
+            double cost = fitness(particle.waypoints, problem);
+            if (cost < particle.best_cost) {
+                particle.best_cost = cost;
+                particle.best_waypoints = particle.waypoints;
+                particle.stagnation_counter = 0; // Reset stagnation counter on improvement
+            } else {
+                particle.stagnation_counter++; // Increment stagnation counter if no improvement
+            }
+
+            // Update global best position
+            if (cost < global_best_cost) {
+                global_best_cost = cost;
+                global_best_waypoints = particle.waypoints;
+            }
+
+            // Annealing acceptance criterion
+            if (cost > global_best_cost) {
+                double acceptance_prob = std::min(1.0, exp(-(cost - global_best_cost) / temperature));
+                if (static_cast<double>(rand()) / RAND_MAX < acceptance_prob) {
+                    global_best_cost = cost;
+                    global_best_waypoints = particle.waypoints; 
+                }
+            }
+
+            // Dimensional learning: If the particle has stagnated, update its local best coordinate by coordinate
+            if (particle.stagnation_counter >= stagnation_threshold) {
+                for (std::size_t j=0; j < particle.waypoints.size(); ++j) {
+                    // Create a new candidate by replacing the j-th coordinate with the global best
+                    Point candidate_waypoint = particle.best_waypoints[j];
+                    particle.best_waypoints[j] = global_best_waypoints[j];
+
+                    double candidate_cost = fitness(particle.best_waypoints, problem);
+                    if (candidate_cost < particle.best_cost) {
+                        particle.best_cost = candidate_cost;
+                        particle.best_waypoints = particle.best_waypoints;
+                    } else {
+                        // Revert the change if it doesn't improve
+                        particle.best_waypoints[j] = candidate_waypoint;
+                    }
+                }
+                particle.stagnation_counter = 0; // Reset stagnation counter after learning
+            }
+        }
+        
+
+        // Update velocities and positions of particles
+        for (auto& particle : particles) {
+            for (size_t i = 0; i < particle.waypoints.size(); ++i) {
+                // Update velocity based on local and global bests
+                double r1 = static_cast<double>(rand()) / RAND_MAX; // random in [0, 1]
+                double r2 = static_cast<double>(rand()) / RAND_MAX; // random in [0, 1]
+
+                particle.velocity[i].x = w * particle.velocity[i].x +
+                                        c1 * r1 * (particle.best_waypoints[i].x - particle.waypoints[i].x) +
+                                        c2 * r2 * (global_best_waypoints[i].x - particle.waypoints[i].x);
+
+                particle.velocity[i].y = w * particle.velocity[i].y +
+                                        c1 * r1 * (particle.best_waypoints[i].y - particle.waypoints[i].y) +
+                                        c2 * r2 * (global_best_waypoints[i].y - particle.waypoints[i].y);
+
+                // Update position
+                particle.waypoints[i].x += particle.velocity[i].x;
+                particle.waypoints[i].y += particle.velocity[i].y;
+
+                // Ensure waypoints are within bounds of the environment
+                particle.waypoints[i].x = std::max(0.0, std::min(particle.waypoints[i].x, problem.x_max));
+                particle.waypoints[i].y = std::max(0.0, std::min(particle.waypoints[i].y, problem.y_max));
+            }
+        }
+
+        // Temperature update
+        temperature = temperature * cooling_rate; 
+    }
+
+    // Final check to update best solution after the last iteration
+    if (final_best_cost > global_best_cost) {
+        final_best_cost = global_best_cost;
+        final_best_waypoints = global_best_waypoints;
+    }
+        
+    
+    return {final_best_waypoints, final_best_cost};
+}
 
 /*
 * @brief Objective function for the PSO problem, which should be minimized.
