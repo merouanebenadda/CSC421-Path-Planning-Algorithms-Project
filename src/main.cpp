@@ -8,6 +8,24 @@
 
 using namespace std;
 
+/// Hyperparameters for PSO
+
+// Base algorithm parameters
+const int NUM_PARTICLES = 100;
+const int NUM_WAYPOINTS = 8;
+const int NUM_ITERATIONS = 50000;
+const double C1 = 1.0; // cognitive coefficient
+const double C2 = 1.0; // social coefficient
+const double W = 0.75;  // inertia weight
+
+// Random restart parameters
+const int RESTART_INTERVAL = 2000; // Number of iterations after which to perform a random restart
+
+// Annealing parameters
+double initial_temperature = 10.0; // The larger, the more likely to accept worse solutions at the start
+double cooling_rate = 0.999; // Between 0 and 1
+
+
 /*
 @brief saves the given path to a file and optionally visualizes it using a Python script if --plot flag is provided.
 @param argc the number of command-line arguments
@@ -39,7 +57,7 @@ void visualize(int argc, char* argv[], vector<Point> path){
 
 // Test functions
 
-// Function to test the PSO implementation
+// Functions to test the PSO implementations
 int test_pso(int argc, char* argv[]){
     srand(time(0)); // Seed the random number generator
 
@@ -56,8 +74,8 @@ int test_pso(int argc, char* argv[]){
     }
 
     // PSO optimization
-    PSO pso(problem, 100, 5); // Optionally, you can specify num_particles and num_waypoints here
-    auto [best_path, best_cost] = pso.optimize(problem, 100000); // Optimize for 10000 iterations
+    PSO pso(problem, NUM_PARTICLES, NUM_WAYPOINTS); // Optionally, you can specify num_particles and num_waypoints here
+    auto [best_path, best_cost] = pso.optimize(problem, NUM_ITERATIONS, C1, C2, W); // Optimize for 10000 iterations
 
     // Output results
     cout << "Best path found:" << endl;
@@ -72,6 +90,74 @@ int test_pso(int argc, char* argv[]){
     return 0;
 }
 
+int test_random_restart_pso(int argc, char* argv[]){
+    srand(time(0)); // Seed the random number generator
+
+    if (argc < 2 || argc > 3) {
+        cerr << "Usage: " << argv[0] << " <scenario_file> [--plot]" << endl;
+        return 1;
+    }
+
+    // Load problem scenario
+    Problem problem;
+    if (!problem.loadScenario(argv[1])) {
+        cerr << "Failed to load scenario from file: " << argv[1] << endl;
+        return 1;
+    }
+
+    // PSO optimization with random restarts
+    PSO pso(problem, NUM_PARTICLES, NUM_WAYPOINTS); // Optionally, you can specify num_particles and num_waypoints here
+    auto [best_path, best_cost] = pso.optimize_with_random_restart(problem, NUM_ITERATIONS, C1, C2, W, RESTART_INTERVAL); // Optimize with random restarts
+
+    // Output results
+    cout << "Best path found:" << endl;
+    for (const auto& point : best_path) {
+        cout << "(" << point.x << ", " << point.y << ")" << endl;
+    }
+
+    cout << "Best cost: " << best_cost << endl;
+
+    visualize(argc, argv, best_path);
+    return 0;
+}
+
+int test_annealing_pso(int argc, char* argv[]){
+    srand(time(0)); // Seed the random number generator
+
+    if (argc < 2 || argc > 3) {
+        cerr << "Usage: " << argv[0] << " <scenario_file> [--plot]" << endl;
+        return 1;
+    }
+
+    // Load problem scenario
+    Problem problem;
+    if (!problem.loadScenario(argv[1])) {
+        cerr << "Failed to load scenario from file: " << argv[1] << endl;
+        return 1;
+    }
+
+    // PSO optimization with annealing
+    PSO pso(problem, NUM_PARTICLES, NUM_WAYPOINTS); // Optionally, you can specify num_particles and num_waypoints here
+    auto [best_path, best_cost] = pso.optimize_with_annealing(problem, NUM_ITERATIONS, C1, C2, W, RESTART_INTERVAL, initial_temperature, cooling_rate); // Optimize with annealing
+
+    // Output results
+    cout << "Best path found:" << endl;
+    for (const auto& point : best_path) {
+        cout << "(" << point.x << ", " << point.y << ")" << endl;
+    }
+
+    cout << "Best cost: " << best_cost << endl;
+
+    visualize(argc, argv, best_path);
+    return 0;
+}
+
+int test_dimensional_learning_pso(int argc, char* argv[]){
+    // Placeholder for dimensional learning PSO test
+    cerr << "Dimensional Learning PSO test not implemented yet." << endl;
+    return 1;
+}
+
 int main(int argc, char* argv[]) {
-    return test_pso(argc, argv);
+    return test_annealing_pso(argc, argv);
 }
