@@ -9,9 +9,9 @@ You can find the answers to the questions in the [`ANSWERS.md`](ANSWERS.md) file
 
 ### How to run the code
 
-'''bash
+```bash
 
 ### Clean, build and run (--plot is optional, it will display the path and obstacles)
 make clean && make && ./path_planner assets/scenarios/scenario1.txt --plot
 
-'''
+```
