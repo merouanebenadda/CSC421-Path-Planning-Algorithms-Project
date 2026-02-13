@@ -1,5 +1,6 @@
 #include "utils.hpp"
 #include "Problem.hpp"
+#include <algorithm>
 #include <cmath>
 
 double euclideanDistance(const Point& p1, const Point& p2) {
@@ -53,4 +54,80 @@ bool segmentIntersectsObstacles(const Point& p1, const Point& p2, const std::vec
         }
     }
     return false;
+}
+
+// Computes the analytical distance that the line segment from p1 to p2 travels into the obstacle obs using the Liang-Barsky algorithm
+double segmentCollisionDistance(const Point& p1, const Point& p2, const Obstacle& obs) {
+    const double xmin = obs.ll_corner.x;
+    const double xmax = obs.ll_corner.x + obs.lx;
+    const double ymin = obs.ll_corner.y;
+    const double ymax = obs.ll_corner.y + obs.ly;
+
+    const double dx = p2.x - p1.x;
+    const double dy = p2.y - p1.y;
+    const double seg_len = std::sqrt(dx * dx + dy * dy); 
+    const double eps = 1e-12;
+
+    if (seg_len <= eps) {
+        return 0.0;
+    }
+
+    double t0 = 0.0;
+    double t1 = 1.0;
+
+    auto clip = [&](double p, double q) -> bool {
+        if (std::abs(p) <= eps) {
+            return q >= -eps;
+        }
+        double r = q / p;
+        if (p < 0.0) {
+            if (r > t1 + eps) {
+                return false;
+            }
+            if (r > t0) {
+                t0 = r;
+            }
+        } else {
+            if (r < t0 - eps) {
+                return false;
+            }
+            if (r < t1) {
+                t1 = r;
+            }
+        }
+        return true;
+    };
+
+    if (!clip(-dx, p1.x - xmin)) {
+        return 0.0;
+    }
+    if (!clip(dx, xmax - p1.x)) {
+        return 0.0;
+    }
+    if (!clip(-dy, p1.y - ymin)) {
+        return 0.0;
+    }
+    if (!clip(dy, ymax - p1.y)) {
+        return 0.0;
+    }
+
+    if (t1 < t0) {
+        return 0.0;
+    }
+
+    const double t_start = std::max(0.0, t0);
+    const double t_end = std::min(1.0, t1);
+    if (t_end < t_start) {
+        return 0.0;
+    }
+
+    return (t_end - t_start) * seg_len;
+}
+
+double segmentCollisionDistance(const Point& p1, const Point& p2, const std::vector<Obstacle>& obstacles) {
+    double total_collision_distance = 0.0;
+    for (const auto& obs : obstacles) {
+        total_collision_distance += segmentCollisionDistance(p1, p2, obs);
+    }
+    return total_collision_distance;
 }

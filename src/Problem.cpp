@@ -105,3 +105,19 @@ bool Problem::isCollision(const std::vector<Point>& path) const {
 };
 
 
+double Problem::collisionDistance(const std::vector<Point>& path) const {
+    double total_collision_distance = 0.0;
+    if (path.size() < 2) {
+        return 0.0; // A path with fewer than 2 points has no segments to check
+    }
+
+    // Check each segment of the inner path for collision distance
+    for (size_t i = 0; i < path.size() - 1; ++i) {
+        total_collision_distance += segmentCollisionDistance(path[i], path[i + 1], obstacles);
+    }
+    // Check the segments from start to first waypoint and last waypoint to goal
+    total_collision_distance += segmentCollisionDistance(start1, path.front(), obstacles);
+    total_collision_distance += segmentCollisionDistance(path.back(), goal1, obstacles);
+
+    return total_collision_distance;
+};

@@ -1,6 +1,7 @@
 #include <vector>
 #include <utility>
 #include <math.h>
+#include <functional>
 
 #include "PSO.hpp"
 #include "Problem.hpp"
@@ -33,7 +34,7 @@ PSO::PSO(const Problem& problem, int num_particles, int num_waypoints) : global_
 }
 
 std::pair<std::vector<Point>, double> PSO::optimize(const Problem& problem, int num_iterations,
-    double c1, double c2, double w) {
+    double c1, double c2, double w,  std::function<double(const std::vector<Point>&, const Problem&)> fitness) {
     // Ensure global_best_waypoints is initialized
     if (global_best_waypoints.empty() && !particles.empty()) {
         global_best_waypoints = particles[0].waypoints;
@@ -86,7 +87,7 @@ std::pair<std::vector<Point>, double> PSO::optimize(const Problem& problem, int 
 This variant includes random restarts.
 */
 std::pair<std::vector<Point>, double> PSO::optimize_with_random_restart(const Problem& problem, int num_iterations,
-    double c1, double c2, double w, int restart_interval) {
+    double c1, double c2, double w, int restart_interval, std::function<double(const std::vector<Point>&, const Problem&)> fitness) {
     int num_particles = particles.size();
     std::vector<Point> final_best_waypoints = global_best_waypoints;
     double final_best_cost = global_best_cost;
@@ -162,7 +163,8 @@ std::pair<std::vector<Point>, double> PSO::optimize_with_random_restart(const Pr
 This variant includes random restarts and annealing
 */
 std::pair<std::vector<Point>, double> PSO::optimize_with_annealing(const Problem& problem, int num_iterations,
-    double c1, double c2, double w, int restart_interval, double initial_temp, double cooling_rate) {
+    double c1, double c2, double w, int restart_interval, double initial_temp, double cooling_rate, 
+    std::function<double(const std::vector<Point>&, const Problem&)> fitness) {
     double temperature = initial_temp;
     int num_particles = particles.size();
     std::vector<Point> final_best_waypoints = global_best_waypoints;
@@ -261,7 +263,8 @@ std::pair<std::vector<Point>, double> PSO::optimize_with_annealing(const Problem
 This variant includes random restarts, annealing, and dimensional learning
 */
 std::pair<std::vector<Point>, double> PSO::optimize_with_dimensional_learning(const Problem& problem, int num_iterations,
-    double c1, double c2, double w, int restart_interval, double initial_temp, double cooling_rate, int stagnation_threshold) {
+    double c1, double c2, double w, int restart_interval, double initial_temp, double cooling_rate, int stagnation_threshold,
+    std::function<double(const std::vector<Point>&, const Problem&)> fitness) {
     double temperature = initial_temp;
     int num_particles = particles.size();
     std::vector<Point> final_best_waypoints = global_best_waypoints;
@@ -400,4 +403,21 @@ double fitness(const std::vector<Point>& waypoints, const Problem& problem) {
     total_distance += euclideanDistance(current, problem.goal1);
 
     return total_distance;
+}
+
+/*
+* @brief A refined fitness function that takes into account the distance travelled into obstacles
+* @param waypoints The waypoints of the path to evaluate.
+* @param problem The problem instance containing the environment and obstacles.
+*/
+double fitness_refined(const std::vector<Point>& waypoints, const Problem& problem) {
+    double total_distance = 0.0;
+    Point current = problem.start1;
+    for (const auto& wp : waypoints) {
+        total_distance += euclideanDistance(current, wp);
+        current = wp;
+    }
+    total_distance += euclideanDistance(current, problem.goal1);
+
+    return total_distance + 1e6 * problem.collisionDistance(waypoints); 
 }

@@ -12,9 +12,9 @@ using namespace std;
 /// Hyperparameters for PSO
 
 // Base algorithm parameters
-const int NUM_PARTICLES = 10000;
+const int NUM_PARTICLES = 400;
 const int NUM_WAYPOINTS = 5;
-const int NUM_ITERATIONS = 1000;
+const int NUM_ITERATIONS = 5000;
 const double C1 = 2.0; // cognitive coefficient
 const double C2 = 2.0; // social coefficient
 const double W = 0.75;  // inertia weight
@@ -28,6 +28,9 @@ double cooling_rate = 0.99; // Between 0 and 1
 
 // Dimensional learning parameters
 int stagnation_threshold = 100; // Number of iterations without improvement before applying dimensional learning
+
+// Fitness function choice
+std::function<double(const std::vector<Point>&, const Problem&)> fitness_function = fitness_refined;
 
 /*
 @brief saves the given path to a file and optionally visualizes it using a Python script if --plot flag is provided.
@@ -79,7 +82,7 @@ int test_pso(int argc, char* argv[]){
     // PSO optimization
     PSO pso(problem, NUM_PARTICLES, NUM_WAYPOINTS); // Optionally, you can specify num_particles and num_waypoints here
     clock_t start_time = clock();
-    auto [best_path, best_cost] = pso.optimize(problem, NUM_ITERATIONS, C1, C2, W); // Optimize for 10000 iterations
+    auto [best_path, best_cost] = pso.optimize(problem, NUM_ITERATIONS, C1, C2, W, fitness_function); // Optimize for 10000 iterations
     clock_t end_time = clock();
     double cpu_time = double(end_time - start_time) / CLOCKS_PER_SEC;
 
@@ -115,7 +118,8 @@ int test_random_restart_pso(int argc, char* argv[]){
     // PSO optimization with random restarts
     PSO pso(problem, NUM_PARTICLES, NUM_WAYPOINTS); // Optionally, you can specify num_particles and num_waypoints here
     clock_t start_time = clock();
-    auto [best_path, best_cost] = pso.optimize_with_random_restart(problem, NUM_ITERATIONS, C1, C2, W, RESTART_INTERVAL); // Optimize with random restarts
+    auto [best_path, best_cost] = pso.optimize_with_random_restart(problem, NUM_ITERATIONS, C1, C2, W, 
+        RESTART_INTERVAL, fitness_function); // Optimize with random restarts
     clock_t end_time = clock();
     double cpu_time = double(end_time - start_time) / CLOCKS_PER_SEC;
 
@@ -150,7 +154,8 @@ int test_annealing_pso(int argc, char* argv[]){
     // PSO optimization with annealing
     PSO pso(problem, NUM_PARTICLES, NUM_WAYPOINTS); // Optionally, you can specify num_particles and num_waypoints here
     clock_t start_time = clock();
-    auto [best_path, best_cost] = pso.optimize_with_annealing(problem, NUM_ITERATIONS, C1, C2, W, RESTART_INTERVAL, initial_temperature, cooling_rate); // Optimize with annealing
+    auto [best_path, best_cost] = pso.optimize_with_annealing(problem, NUM_ITERATIONS, C1, C2, W, RESTART_INTERVAL, 
+        initial_temperature, cooling_rate, fitness_function); // Optimize with annealing
     clock_t end_time = clock();
     double cpu_time = double(end_time - start_time) / CLOCKS_PER_SEC;
 
@@ -185,7 +190,8 @@ int test_dimensional_learning_pso(int argc, char* argv[]){
     // PSO optimization with dimensional learning
     PSO pso(problem, NUM_PARTICLES, NUM_WAYPOINTS); // Optionally, you can specify num_particles and num_waypoints here
     clock_t start_time = clock();
-    auto [best_path, best_cost] = pso.optimize_with_dimensional_learning(problem, NUM_ITERATIONS, C1, C2, W, RESTART_INTERVAL, initial_temperature, cooling_rate, stagnation_threshold); // Optimize with dimensional learning
+    auto [best_path, best_cost] = pso.optimize_with_dimensional_learning(problem, NUM_ITERATIONS, C1, C2, W, 
+        RESTART_INTERVAL, initial_temperature, cooling_rate, stagnation_threshold, fitness_function); // Optimize with dimensional learning
     clock_t end_time = clock();
     double cpu_time = double(end_time - start_time) / CLOCKS_PER_SEC;
 
@@ -203,5 +209,5 @@ int test_dimensional_learning_pso(int argc, char* argv[]){
 }
 
 int main(int argc, char* argv[]) {
-    return test_pso(argc, argv);
+    return test_dimensional_learning_pso(argc, argv);
 }
