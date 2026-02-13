@@ -2,6 +2,7 @@
 #include <fstream> // for file handling
 #include <string>
 #include <random>
+#include <ctime>
 
 #include "Problem.hpp"
 #include "PSO.hpp"
@@ -11,15 +12,15 @@ using namespace std;
 /// Hyperparameters for PSO
 
 // Base algorithm parameters
-const int NUM_PARTICLES = 1000;
-const int NUM_WAYPOINTS = 6;
-const int NUM_ITERATIONS = 50000;
+const int NUM_PARTICLES = 100;
+const int NUM_WAYPOINTS = 5;
+const int NUM_ITERATIONS = 100000;
 const double C1 = 1.0; // cognitive coefficient
 const double C2 = 1.0; // social coefficient
 const double W = 0.75;  // inertia weight
 
 // Random restart parameters
-const int RESTART_INTERVAL = 5000; // Number of iterations after which to perform a random restart
+const int RESTART_INTERVAL = 2000; // Number of iterations after which to perform a random restart
 
 // Annealing parameters
 double initial_temperature = 100.0; // The larger, the more likely to accept worse solutions at the start
@@ -77,7 +78,10 @@ int test_pso(int argc, char* argv[]){
 
     // PSO optimization
     PSO pso(problem, NUM_PARTICLES, NUM_WAYPOINTS); // Optionally, you can specify num_particles and num_waypoints here
+    clock_t start_time = clock();
     auto [best_path, best_cost] = pso.optimize(problem, NUM_ITERATIONS, C1, C2, W); // Optimize for 10000 iterations
+    clock_t end_time = clock();
+    double cpu_time = double(end_time - start_time) / CLOCKS_PER_SEC;
 
     // Output results
     cout << "Best path found:" << endl;
@@ -86,6 +90,7 @@ int test_pso(int argc, char* argv[]){
     }
 
     cout << "Best cost: " << best_cost << endl;
+    cout << "CPU time: " << cpu_time << " seconds" << endl;
 
 
     visualize(argc, argv, best_path);
@@ -109,7 +114,10 @@ int test_random_restart_pso(int argc, char* argv[]){
 
     // PSO optimization with random restarts
     PSO pso(problem, NUM_PARTICLES, NUM_WAYPOINTS); // Optionally, you can specify num_particles and num_waypoints here
+    clock_t start_time = clock();
     auto [best_path, best_cost] = pso.optimize_with_random_restart(problem, NUM_ITERATIONS, C1, C2, W, RESTART_INTERVAL); // Optimize with random restarts
+    clock_t end_time = clock();
+    double cpu_time = double(end_time - start_time) / CLOCKS_PER_SEC;
 
     // Output results
     cout << "Best path found:" << endl;
@@ -118,6 +126,7 @@ int test_random_restart_pso(int argc, char* argv[]){
     }
 
     cout << "Best cost: " << best_cost << endl;
+    cout << "CPU time: " << cpu_time << " seconds" << endl;
 
     visualize(argc, argv, best_path);
     return 0;
@@ -140,7 +149,10 @@ int test_annealing_pso(int argc, char* argv[]){
 
     // PSO optimization with annealing
     PSO pso(problem, NUM_PARTICLES, NUM_WAYPOINTS); // Optionally, you can specify num_particles and num_waypoints here
+    clock_t start_time = clock();
     auto [best_path, best_cost] = pso.optimize_with_annealing(problem, NUM_ITERATIONS, C1, C2, W, RESTART_INTERVAL, initial_temperature, cooling_rate); // Optimize with annealing
+    clock_t end_time = clock();
+    double cpu_time = double(end_time - start_time) / CLOCKS_PER_SEC;
 
     // Output results
     cout << "Best path found:" << endl;
@@ -149,6 +161,7 @@ int test_annealing_pso(int argc, char* argv[]){
     }
 
     cout << "Best cost: " << best_cost << endl;
+    cout << "CPU time: " << cpu_time << " seconds" << endl;
 
     visualize(argc, argv, best_path);
     return 0;
@@ -171,7 +184,10 @@ int test_dimensional_learning_pso(int argc, char* argv[]){
 
     // PSO optimization with dimensional learning
     PSO pso(problem, NUM_PARTICLES, NUM_WAYPOINTS); // Optionally, you can specify num_particles and num_waypoints here
+    clock_t start_time = clock();
     auto [best_path, best_cost] = pso.optimize_with_dimensional_learning(problem, NUM_ITERATIONS, C1, C2, W, RESTART_INTERVAL, initial_temperature, cooling_rate, stagnation_threshold); // Optimize with dimensional learning
+    clock_t end_time = clock();
+    double cpu_time = double(end_time - start_time) / CLOCKS_PER_SEC;
 
     // Output results
     cout << "Best path found:" << endl;
@@ -180,11 +196,12 @@ int test_dimensional_learning_pso(int argc, char* argv[]){
     }
 
     cout << "Best cost: " << best_cost << endl;
+    cout << "CPU time: " << cpu_time << " seconds" << endl;
 
     visualize(argc, argv, best_path);
     return 0;
 }
 
 int main(int argc, char* argv[]) {
-    return test_dimensional_learning_pso(argc, argv);
+    return test_pso(argc, argv);
 }

@@ -1,5 +1,8 @@
 \documentclass{article}
 
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\usepackage{amsmath} % For math symbols
+
 \begin{document}
 \title{INF421 PI\@: PATH PLANNING ALGORITHMS}
 \author{Merouane Benadda, Antoine Fèvre}
@@ -25,9 +28,58 @@ For visualization, we used Python with Matplotlib, as it provides a more conveni
 
 \textbf{Question 5.} 
 
+\begin{algorithm}[H]
+    \DontPrintSemicolon
+    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+
+    \Input{Problem scenario $P$, iterations $I$, constants $c_1, c_2, w$}
+    \Output{Global best path $g_{best}$ and its cost $f(g_{best})$}
+
+    \BlankLine
+    Initialize $g_{best}$ with the first particle's waypoints\;
+    \For{$iter = 1$ \KwTo$I$}{
+        \BlankLine
+        \tcp{Evaluate Fitness and Update Memory}
+        \ForEach{particle $p$ in swarm}{
+            $cost \leftarrow \text{fitness}(p.waypoints, P)$\;
+            
+            \If{$cost < p.best\_cost$}{
+                $p.best\_cost \leftarrow cost$\;
+                $p.best\_waypoints \leftarrow p.waypoints$\;
+            }
+            
+            \If{$cost < g_{best}.cost$}{
+                $g_{best}.cost \leftarrow cost$\;
+                $g_{best}.waypoints \leftarrow p.waypoints$\;
+            }
+        }
+
+        \BlankLine
+        \tcp{Update Kinematics}
+        \ForEach{particle $p$ in swarm}{
+            \For{each waypoint $i$ in path}{
+                $r_1, r_2 \leftarrow \text{random}(0, 1)$\;
+                
+                \tcp{Velocity Update}
+                $v_i \leftarrow w \cdot v_i + c_1 \cdot r_1 \cdot (p.best\_waypoints_i - p.waypoints_i) + c_2 \cdot r_2 \cdot (g_{best}.waypoints_i - p.waypoints_i)$\;
+                
+                \tcp{Position Update}
+                $p.waypoints_i \leftarrow p.waypoints_i + v_i$\;
+                
+                \tcp{Boundary Constraint}
+                $p.waypoints_i \leftarrow \text{clamp}(p.waypoints_i, P.\min, P.\max)$\;
+            }
+        }
+    }
+    \Return{$g_{best}$}
+    \caption{Particle Swarm Optimization for Path Planning}\label{alg:pso}
+\end{algorithm}
+
 \medskip
 
-\textbf{Question 6.}
+\textbf{Question 6.} The complexity of the algorithm is $O(I \cdot N \cdot M)$, where $I$ is the number of iterations, $N$ is the number of particles in the swarm, and $M$ is the number of waypoints in each particle's path. 
+
+Indeed, for each iteration, we evaluate the fitness of each particle, which takes $O(N \cdot M)$ time, since we compute the fitness by iterating over each waypoint in each particle's path. Then, we update the velocity and position of each particle, which also takes $O(N \cdot M)$ time, as we need to update each waypoint for each particle. Therefore, the overall complexity is $O(I \cdot N \cdot M)$.
 
 \medskip
 
@@ -36,6 +88,20 @@ For visualization, we used Python with Matplotlib, as it provides a more conveni
 \medskip
 
 \textbf{Question 8.}
+
+\textbf{Scenario 0}
+
+Best cost: 1443.33
+CPU time: 1.587 seconds
+
+\textbf{Scenario 1}
+
+
+\textbf{Scenario 2}
+
+\textbf{Scenario 3}
+
+
 
 \medskip
 
@@ -107,7 +173,9 @@ To do so, we compute the intersection of the path with the obstacles in \texttt{
 
 \medskip
 
-\textbf{Question 25.}
+\textbf{Question 25.} We use Github for version control and to share our code. It is a very convenient tool for collaboration, as it allows us to easily track changes, manage branches, and review each other's code.
+
+We also used GitHub Copilot to help us with some of the redundant code, such as the verification of the input or the geometry functions. It is a very useful tool for increasing productivity, as it can generate code snippets based on the context, which saves us time and allows us to focus on the more complex parts of the implementation. However, we used it very carefully, as it can sometimes generate incorrect code, so we always reviewed the generated code line by line to ensure its correctness.
 
 \medskip
 
