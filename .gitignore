@@ -12,6 +12,14 @@ CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 
+# --- Latex Junk ---
+*.aux
+*.log
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
 # --- Python Junk ---
 __pycache__/
 *.py[cod]

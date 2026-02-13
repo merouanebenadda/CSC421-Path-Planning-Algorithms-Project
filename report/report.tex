@@ -1,0 +1,114 @@
+\documentclass{article}
+
+\begin{document}
+\title{INF421 PI\@: PATH PLANNING ALGORITHMS}
+\author{Merouane Benadda, Antoine Fèvre}
+
+\maketitle
+
+\textbf{Question 1.} We chose to implement the algorithm in C++, as it allows better performance. 
+For visualization, we used Python with Matplotlib, as it provides a more convenient way to create visual representations of the results.
+
+\medskip
+
+\textbf{Question 2.} See the implementation in the file \texttt{scripts/visualize.py}.
+
+\medskip
+
+\textbf{Question 3.} See the implementation in the file \texttt{src/pso.cpp}.
+
+\medskip
+
+\textbf{Question 4.} See the implementation in the file \texttt{src/pso.cpp}.
+
+\medskip
+
+\textbf{Question 5.} 
+
+\medskip
+
+\textbf{Question 6.}
+
+\medskip
+
+\textbf{Question 7.} See the implementation in the file \texttt{src/pso.cpp}.
+
+\medskip
+
+\textbf{Question 8.}
+
+\medskip
+
+\textbf{Question 9.}
+
+\medskip
+
+\textbf{Question 10.}
+
+\medskip
+
+\textbf{Question 11.}
+
+\medskip
+
+\textbf{Question 12.} To improve the performance of the algorithm, we could refine the fitness function. Instead of simply being the euclidian distance plus infinity if the path crosses an obstacle, we can make it output the euclidian distance plus a penalty proportional to the distance crossed in the obstacles.
+
+This way, the algorithm would converge faster, especially in cases with lots of obstacles, as it would be able to differentiate between paths that are close to the optimal one but cross an obstacle and paths that are far from the optimal one but do not cross any obstacle.
+
+To do so, we compute the intersection of the path with the obstacles in \texttt{src/utils.cpp}. To avoid any situation where the alogorithm would prefer crossing an obstacle to reduce the distance, we can set the penalty to be a large constant multiplied by the distance crossed in the obstacle.
+
+\medskip
+
+\textbf{Question 13.}
+
+\medskip
+
+\textbf{Question 14.}
+
+\medskip
+
+\textbf{Question 15.}
+
+\medskip
+
+\textbf{Question 16.}
+
+\medskip
+
+\textbf{Question 17.}
+
+\medskip
+
+\textbf{Question 18.}
+
+\medskip
+
+\textbf{Question 19.}
+
+\medskip
+
+\textbf{Question 20.}
+
+\medskip
+
+\textbf{Question 21.}
+
+\medskip
+
+\textbf{Question 22.}
+
+\medskip
+
+\textbf{Question 23.}
+
+\medskip
+
+\textbf{Question 24.}
+
+\medskip
+
+\textbf{Question 25.}
+
+\medskip
+
+\end{document}

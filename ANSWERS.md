@@ -1,7 +1,7 @@
 # Answers
 
 ## Implementation choices
-We chose to implement the solution in C++ for the main algorithmic part, as it allows for better performance and control over memory management, which is crucial for optimization problems like PSO. For visualization, we opted for Python with Matplotlib, as it provides a more convenient and powerful way to create visual representations of the results.
+We chose to implement the solution in C++ for the main algorithmic part, as it allows for better performance and control over memory management, which is crucial for optimization problems like PSO. For visualization, we opted for Python with Matplotlib, as it provides a more convenient way to create visual representations of the results.
 
 ## Answers to the questions
 
