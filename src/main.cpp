@@ -208,6 +208,154 @@ int test_dimensional_learning_pso(int argc, char* argv[]){
     return 0;
 }
 
+void write_path(std::ostream& out, const std::vector<Point>& path) {
+    for (const auto& point : path) {
+        out << "(" << point.x << ", " << point.y << ")" << std::endl;
+    }
+}
+
+int test_all() {
+    srand(time(0)); // Seed the random number generator
+
+    const std::vector<std::string> scenarios = {
+        "assets/scenarios/scenario0.txt",
+        "assets/scenarios/scenario1.txt",
+        "assets/scenarios/scenario2.txt",
+        "assets/scenarios/scenario3.txt",
+        "assets/scenarios/scenario4.txt"
+    };
+
+    const std::string outputFileName = "output/test_all_results_" + std::to_string(time(0)) + ".txt";
+    std::ofstream outputFile(outputFileName);
+    if (!outputFile.is_open()) {
+        std::cerr << "Error: Could not open output file " << outputFileName << std::endl;
+        return 1;
+    }
+
+    using Optimizer = std::function<std::pair<std::vector<Point>, double>(PSO&, const Problem&)>;
+
+    auto run_optimizer = [&](const std::string& label, const Problem& problem, const Optimizer& optimizer) {
+        PSO pso(problem, NUM_PARTICLES, NUM_WAYPOINTS);
+        clock_t start_time = clock();
+        auto [best_path, best_cost] = optimizer(pso, problem);
+        clock_t end_time = clock();
+        double cpu_time = double(end_time - start_time) / CLOCKS_PER_SEC;
+
+        outputFile << label << std::endl;
+        outputFile << "Best path:" << std::endl;
+        write_path(outputFile, best_path);
+        outputFile << "Best cost: " << best_cost << std::endl;
+        outputFile << "CPU time: " << cpu_time << " seconds" << std::endl;
+        outputFile << std::endl;
+    };
+
+    for (const auto& scenario : scenarios) {
+        outputFile << "Scenario: " << scenario << std::endl;
+        Problem problem;
+        if (!problem.loadScenario(scenario)) {
+            outputFile << "Failed to load scenario." << std::endl << std::endl;
+            continue;
+        }
+
+        run_optimizer(
+            "Basic PSO",
+            problem,
+            [&](PSO& pso, const Problem& prob) {
+                return pso.optimize(prob, NUM_ITERATIONS, C1, C2, W, fitness);
+            }
+        );
+
+        run_optimizer(
+            "Random Restart PSO",
+            problem,
+            [&](PSO& pso, const Problem& prob) {
+                return pso.optimize_with_random_restart(prob, NUM_ITERATIONS, C1, C2, W, RESTART_INTERVAL, fitness);
+            }
+        );
+
+        run_optimizer(
+            "Annealing PSO",
+            problem,
+            [&](PSO& pso, const Problem& prob) {
+                return pso.optimize_with_annealing(prob, NUM_ITERATIONS, C1, C2, W, RESTART_INTERVAL,
+                    initial_temperature, cooling_rate, fitness);
+            }
+        );
+
+        run_optimizer(
+            "Dimensional Learning PSO",
+            problem,
+            [&](PSO& pso, const Problem& prob) {
+                return pso.optimize_with_dimensional_learning(prob, NUM_ITERATIONS, C1, C2, W, RESTART_INTERVAL,
+                    initial_temperature, cooling_rate, stagnation_threshold, fitness);
+            }
+        );
+
+        run_optimizer(
+            "Basic PSO (refined fitness)",
+            problem,
+            [&](PSO& pso, const Problem& prob) {
+                return pso.optimize(prob, NUM_ITERATIONS, C1, C2, W, fitness_refined);
+            }
+        );
+
+        run_optimizer(
+            "Random Restart PSO (refined fitness)",
+            problem,
+            [&](PSO& pso, const Problem& prob) {
+                return pso.optimize_with_random_restart(prob, NUM_ITERATIONS, C1, C2, W, RESTART_INTERVAL, fitness_refined);
+            }
+        );
+
+        run_optimizer(
+            "Annealing PSO (refined fitness)",
+            problem,
+            [&](PSO& pso, const Problem& prob) {
+                return pso.optimize_with_annealing(prob, NUM_ITERATIONS, C1, C2, W, RESTART_INTERVAL,
+                    initial_temperature, cooling_rate, fitness_refined);
+            }
+        );
+
+        run_optimizer(
+            "Dimensional Learning PSO (refined fitness)",
+            problem,
+            [&](PSO& pso, const Problem& prob) {
+                return pso.optimize_with_dimensional_learning(prob, NUM_ITERATIONS, C1, C2, W, RESTART_INTERVAL,
+                    initial_temperature, cooling_rate, stagnation_threshold, fitness_refined);
+            }
+        );
+    }
+
+    outputFile << "Dimensional Learning Comparison (Scenario 4)" << std::endl;
+    Problem comparison_problem;
+    if (comparison_problem.loadScenario(scenarios.back())) {
+        run_optimizer(
+            "Dimensional Learning with basic fitness",
+            comparison_problem,
+            [&](PSO& pso, const Problem& prob) {
+                return pso.optimize_with_dimensional_learning(prob, NUM_ITERATIONS, C1, C2, W, RESTART_INTERVAL,
+                    initial_temperature, cooling_rate, stagnation_threshold, fitness);
+            }
+        );
+
+        run_optimizer(
+            "Dimensional Learning with refined fitness",
+            comparison_problem,
+            [&](PSO& pso, const Problem& prob) {
+                return pso.optimize_with_dimensional_learning(prob, NUM_ITERATIONS, C1, C2, W, RESTART_INTERVAL,
+                    initial_temperature, cooling_rate, stagnation_threshold, fitness_refined);
+            }
+        );
+    } else {
+        outputFile << "Failed to load scenario for comparison." << std::endl;
+    }
+
+    std::cout << "Results written to " << outputFileName << std::endl;
+    return 0;
+}
+
+
+
 int main(int argc, char* argv[]) {
-    return test_dimensional_learning_pso(argc, argv);
+    return test_all();
 }
