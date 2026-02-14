@@ -392,7 +392,7 @@ double fitness(const std::vector<Point>& waypoints, const Problem& problem) {
 
     // Check for collisions
     if (problem.isCollision(waypoints)) {
-        return INF; // Penalize paths that collide with obstacles
+        total_distance += INF; // Penalize paths that collide with obstacles
     }
 
     // Calculate total path length
