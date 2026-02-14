@@ -15,3 +15,9 @@ We chose to implement the solution in C++ for the main algorithmic part, as it a
 
 **Question 7** [src/PSO.cpp](src/PSO.cpp) and [include/PSO.hpp](include/PSO.hpp) for the implementation of the PSO algorithm.
 
+**Question 13** [include/RRT.hpp](include/RRT.hpp) for the tree data structure. Parent pointer representation is used.
+
+**Question 14** [src/RRT.cpp](src/RRT.cpp) and [include/RRT.hpp](include/RRT.hpp) for the path reconstruction method.
+
+
+

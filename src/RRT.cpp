@@ -1,0 +1,98 @@
+#include <vector>
+#include <utility>
+#include <math.h>
+#include <functional>
+
+#include "RRT.hpp"
+#include "Problem.hpp"
+#include "utils.hpp"
+
+Tree::Tree(const Problem& problem) {
+    // Initialize the tree with the start point as the root
+    tree.vertices.push_back(problem.start1);
+    tree.parents.push_back(-1); // Root has no parent
+    tree.costs.push_back(0.0); // Cost from root to itself is 0
+}
+
+void RRT::addVertex(const Point& vertex, int parent_index) {
+    tree.vertices.push_back(vertex);
+    tree.parents.push_back(parent_index);
+    tree.costs.push_back(tree.costs[parent_index] + euclideanDistance(tree.vertices[parent_index], vertex));
+}
+
+std::vector<Point> Tree::reconstructPath(int vertex_index) const {
+    std::vector<Point> path;
+    while (vertex_index != -1) {
+        path.push_back(vertices[vertex_index]);
+        vertex_index = parents[vertex_index];
+    }
+    return path;
+}
+
+void RRT::buildRRT(const Problem& problem, double delta_s, double delta_r, int max_iterations) {
+    // Implementation of the RRT algorithm to build the tree
+    while(true){
+        x = static_cast<double>(rand()) / RAND_MAX * problem.x_max;
+        y = static_cast<double>(rand()) / RAND_MAX * problem.y_max;
+        Point vr = Point(x, y);
+
+        if(pointInObstacles(vr, problem.obstacles)){
+            continue; // Skip if the random point is inside an obstacle
+        }
+
+        // Find the nearest vertex in the tree
+        int vn_index = 0;
+        for (size_t i = 1; i < tree.vertices.size(); i++) {
+            if (euclideanDistance(tree.vertices[i], vr) < euclideanDistance(tree.vertices[vn_index], vr)) {
+                vn_index = i;
+            }
+        }
+
+        // Create node v in the direction of vr at maximum distance delta_s from vn
+        Point vn = tree.vertices[vn_index];
+        Point v;
+        double dist = euclideanDistance(vn, vr);
+        if (dist <= delta_s) {
+            v = vr;
+        } else {
+            double theta = atan2(vr.y - vn.y, vr.x - vn.x);
+            v = Point(vn.x + delta_s * cos(theta), vn.y + delta_s * sin(theta));
+        }
+        // Choose the parent of v
+        parent_index = -1;
+        if (!problem.isCollision(vn, v)) {
+            parent_index = vn_index;
+        }
+        for (size_t i = 0; i < tree.vertices.size(); i++) {
+            if (euclideanDistance(tree.vertices[i], v) < delta_r 
+                && !problem.isCollision(tree.vertices[i], v)
+                && (parent_index == -1 
+                    || tree.costs[i] + euclideanDistance(tree.vertices[i], v) < tree.costs[parent_index] + euclideanDistance(tree.vertices[parent_index], v))) {
+                parent_index = i;
+            }
+        }
+        if (parent_index == -1) {
+            continue; // No valid parent found, skip this vertex
+        }
+
+        addVertex(v, parent_index);
+        index_v = tree.vertices.size() - 1;
+    
+        // Update neighors' parent if it improves their cost
+        for (size_t i = 0; i < tree.vertices.size(); i++) {
+            if (euclideanDistance(tree.vertices[i], v) < delta_r 
+                && !problem.isCollision(tree.vertices[i], v)
+                && tree.costs[i] > tree.costs[index_v] + euclideanDistance(tree.vertices[index_v], tree.vertices[i])) {
+                tree.parents[i] = index_v; // Update parent to the new vertex
+                tree.costs[i] = tree.costs[index_v] + euclideanDistance(tree.vertices[index_v], tree.vertices[i]);
+            }
+        }
+
+        // Check if we can connect to the goal
+        if (euclideanDistance(v, problem.goal1) <= delta_s && !problem.isCollision(v, problem.goal1)) {
+            addVertex(problem.goal1, index_v);
+            break; // Goal reached, exit the loop
+        }
+    }
+}
+

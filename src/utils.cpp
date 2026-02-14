@@ -30,6 +30,20 @@ bool segmentsIntersect(const Point& p1, const Point& p2, const Point& p3, const 
     return (t1 >= 0 && t1 <= 1 && t2 >= 0 && t2 <= 1);
 }
 
+bool pointInObstacle(const Point& p, const Obstacle& obs) {
+    return (p.x >= obs.ll_corner.x && p.x <= obs.ll_corner.x + obs.lx &&
+            p.y >= obs.ll_corner.y && p.y <= obs.ll_corner.y + obs.ly);
+}
+
+bool pointInObstacles(const Point& p, const std::vector<Obstacle>& obstacles) {
+    for (const auto& obs : obstacles) {
+        if (pointInObstacle(p, obs)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool segmentIntersectsObstacle(const Point& p1, const Point& p2, const Obstacle& obs) {
     // Check if the segment intersects any of the four edges of the obstacle
     Point obsCorners[4] = {
