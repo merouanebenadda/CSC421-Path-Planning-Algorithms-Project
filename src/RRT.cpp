@@ -9,9 +9,13 @@
 
 Tree::Tree(const Problem& problem) {
     // Initialize the tree with the start point as the root
-    tree.vertices.push_back(problem.start1);
-    tree.parents.push_back(-1); // Root has no parent
-    tree.costs.push_back(0.0); // Cost from root to itself is 0
+    vertices.push_back(problem.start1);
+    parents.push_back(-1); // Root has no parent
+    costs.push_back(0.0); // Cost from root to itself is 0
+}
+
+RRT::RRT(const Problem& problem) : tree(problem) {
+    // The constructor initializes the tree with the start point
 }
 
 void RRT::addVertex(const Point& vertex, int parent_index) {
@@ -20,20 +24,21 @@ void RRT::addVertex(const Point& vertex, int parent_index) {
     tree.costs.push_back(tree.costs[parent_index] + euclideanDistance(tree.vertices[parent_index], vertex));
 }
 
-std::vector<Point> Tree::reconstructPath(int vertex_index) const {
+std::vector<Point> RRT::reconstructPath(int vertex_index) const {
     std::vector<Point> path;
     while (vertex_index != -1) {
-        path.push_back(vertices[vertex_index]);
-        vertex_index = parents[vertex_index];
+        path.push_back(tree.vertices[vertex_index]);
+        vertex_index = tree.parents[vertex_index];
     }
     return path;
 }
 
 void RRT::buildRRT(const Problem& problem, double delta_s, double delta_r, int max_iterations) {
     // Implementation of the RRT algorithm to build the tree
-    while(true){
-        x = static_cast<double>(rand()) / RAND_MAX * problem.x_max;
-        y = static_cast<double>(rand()) / RAND_MAX * problem.y_max;
+    int iterations = 0;
+    while(iterations < max_iterations){
+        double x = static_cast<double>(rand()) / RAND_MAX * problem.x_max;
+        double y = static_cast<double>(rand()) / RAND_MAX * problem.y_max;
         Point vr = Point(x, y);
 
         if(pointInObstacles(vr, problem.obstacles)){
@@ -59,7 +64,7 @@ void RRT::buildRRT(const Problem& problem, double delta_s, double delta_r, int m
             v = Point(vn.x + delta_s * cos(theta), vn.y + delta_s * sin(theta));
         }
         // Choose the parent of v
-        parent_index = -1;
+        int parent_index = -1;
         if (!problem.isCollision(vn, v)) {
             parent_index = vn_index;
         }
@@ -76,7 +81,7 @@ void RRT::buildRRT(const Problem& problem, double delta_s, double delta_r, int m
         }
 
         addVertex(v, parent_index);
-        index_v = tree.vertices.size() - 1;
+        int index_v = tree.vertices.size() - 1;
     
         // Update neighors' parent if it improves their cost
         for (size_t i = 0; i < tree.vertices.size(); i++) {
@@ -93,6 +98,14 @@ void RRT::buildRRT(const Problem& problem, double delta_s, double delta_r, int m
             addVertex(problem.goal1, index_v);
             break; // Goal reached, exit the loop
         }
+
+        iterations++;
     }
+}
+
+std::vector<Point> RRT::rrtPath(const Problem& problem, double delta_s, double delta_r, int max_iterations) {
+    buildRRT(problem, delta_s, delta_r, max_iterations); 
+    return reconstructPath(tree.vertices.size() - 1); // The goal point is the last vertex added to the tree
+
 }
 

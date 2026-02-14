@@ -6,6 +6,7 @@
 
 #include "Problem.hpp"
 #include "PSO.hpp"
+#include "RRT.hpp"
 
 using namespace std;
 
@@ -355,7 +356,44 @@ int test_all() {
 }
 
 
+int test_rrt(int argc, char* argv[]){
+    srand(time(0)); // Seed the random number generator
+
+    if (argc < 2 || argc > 3) {
+        cerr << "Usage: " << argv[0] << " <scenario_file> [--plot]" << endl;
+        return 1;
+    }
+
+    // Load problem scenario
+    Problem problem;
+    if (!problem.loadScenario(argv[1])) {
+        cerr << "Failed to load scenario from file: " << argv[1] << endl;
+        return 1;
+    }
+
+    // PSO optimization
+    RRT rrt(problem); 
+    clock_t start_time = clock();
+    auto best_path = rrt.rrtPath(problem, 50, 100,10000);
+    clock_t end_time = clock();
+    double cpu_time = double(end_time - start_time) / CLOCKS_PER_SEC;
+
+    // Output results
+    cout << "Best path found:" << endl;
+    for (const auto& point : best_path) {
+        cout << "(" << point.x << ", " << point.y << ")" << endl;
+    }
+
+    cout << "CPU time: " << cpu_time << " seconds" << endl;
+
+
+    visualize(argc, argv, best_path);
+    return 0;
+}
+
+
 
 int main(int argc, char* argv[]) {
-    return test_all();
+    // return test_all();
+    return test_rrt(argc, argv);
 }
