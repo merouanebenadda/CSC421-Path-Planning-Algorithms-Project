@@ -47,18 +47,58 @@ def visualize(scenario_file, path_file=None):
     ax.plot(start2[0], start2[1], 'gx', label='Start 2')
     ax.plot(goal2[0], goal2[1], 'rx', label='Goal 2')
 
-    # Plot path if provided
+    # Plot path if provided and see if a tree is included in the path file
     if path_file:
         with open(path_file, 'r') as f:
-            path_nums = list(map(float, f.read().split()))
+            # Read all lines and check for the "TREE" marker
+            lines = f.readlines()
+            if "TREE\n" in lines:
+                tree_index = lines.index("TREE\n")
+                path_lines = lines[:tree_index]
+                tree_lines = lines[tree_index + 1:]
+            else:
+                path_lines = lines
+                tree_lines = []
+                
+            # Process path points
+            path_nums = []
+            for line in path_lines:
+                path_nums.extend(map(float, line.split()))
+            
+            # Process tree data if available
+            tree = {} # Each vertex will be stored as (x, y): parents_list
+            if "TREE\n" in lines:
+                for line in tree_lines:
+                    parts = line.split()
+                    if len(parts) > 2:
+                        x, y = float(parts[0]), float(parts[1])
+                        parents = list(map(int, parts[2:]))
+                        tree[(x, y)] = parents
         
         if len(path_nums) % 2 != 0:
             print("Error: Invalid path file format.")
             return
         
+        # Create path points and plot the path
         path_points = [start1] + [(path_nums[i], path_nums[i+1]) for i in range(0, len(path_nums), 2)] + [goal1]
         path_x, path_y = zip(*path_points)
         ax.plot(path_x, path_y, 'b-', label='Path')
+
+        # Optionally, plot the tree structure if available
+        if tree:
+            tree_vertices = list(tree.keys())  # Maintain order for indexing
+            
+            # Plot tree edges
+            for vertex, parents in tree.items():
+                for parent_index in parents:
+                    if parent_index >= 0:  # Skip root nodes (parent_index == -1)
+                        parent_vertex = tree_vertices[parent_index] # Get the parent vertex using the index
+                        ax.plot([vertex[0], parent_vertex[0]], [vertex[1], parent_vertex[1]], 'c-', alpha=0.3, linewidth=0.5) # Plot tree edges
+            
+            # Plot tree vertices as x markers
+            tree_x = [v[0] for v in tree_vertices]
+            tree_y = [v[1] for v in tree_vertices]
+            ax.plot(tree_x, tree_y, 'cx', markersize=3, alpha=0.5, label='Tree')
 
     ax.legend()
     plt.title("Environment Visualization")

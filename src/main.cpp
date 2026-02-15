@@ -33,18 +33,25 @@ int stagnation_threshold = 15; // Number of iterations without improvement befor
 std::function<double(const std::vector<Point>&, const Problem&)> fitness_function = fitness;
 
 /*
-@brief saves the given path to a file and optionally visualizes it using a Python script if --plot flag is provided.
+@brief saves the given path and tree to a file and optionally visualizes them using a Python script if --plot flag is provided.
 @param argc the number of command-line arguments
 @param argv the array of command-line arguments
 @param path the vector of Points representing the path to be saved and visualized
 */
-void visualize(int argc, char* argv[], vector<Point> path){
+void visualize(int argc, char* argv[], vector<Point> path, Tree* tree = nullptr) {
     // Save results to a file for visualization
     string outputFileName = "output/paths/best_path" + to_string(time(0)) + ".txt";
     ofstream outputFile(outputFileName);
     if (outputFile.is_open()) {
         for (const auto& point : path) {
             outputFile << point.x << " " << point.y << endl;
+        }
+        if (tree) {
+            outputFile << "TREE" << endl; // Marker to indicate tree data follows
+            for (size_t i = 0; i < tree->vertices.size(); i++) { // We use -> to access members of the Tree struct since it's passed as a pointer
+                const auto& vertex = tree->vertices[i];
+                outputFile << vertex.x << " " << vertex.y << " " << tree->parents[i] << endl;
+            }
         }
         outputFile.close();
         cout << "Best path saved to " << outputFileName << endl;
@@ -386,7 +393,7 @@ int test_rrt(int argc, char* argv[]){
     cout << "CPU time: " << cpu_time << " seconds" << endl;
 
 
-    visualize(argc, argv, best_path);
+    visualize(argc, argv, best_path, &rrt.tree);
     return 0;
 }
 
