@@ -7,6 +7,7 @@
 \usepackage{multirow} % For multirow in tables
 \usepackage{float} % For float positioning option H
 \usepackage[utf8]{inputenc}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,filecolor=blue,urlcolor=blue]{hyperref}
 %\usepackage{algorithm}
 %\usepackage{algpseudocode}
 
@@ -20,8 +21,14 @@
 
 \maketitle
 
+In this project, we implemented two path planning algorithms: Particle Swarm Optimization (PSO) and Rapidly-exploring Random Tree (RRT). Path planning is a fundamental problem in robotics and artificial intelligence, where the goal is to find a path from a start point to a goal point while avoiding obstacles. In our case, the environment is a rectangular area with randomly placed rectangular obstacles.
+
+\bigskip
+
 \textbf{Question 1.} We chose to implement the algorithm in C++, as it allows better performance. 
 For visualization, we used Python with Matplotlib, as it provides a more convenient way to create visual representations of the results.
+
+The corresponding method can be found in the file \texttt{src/Problem.cpp}.
 
 \medskip
 
@@ -30,6 +37,7 @@ For visualization, we used Python with Matplotlib, as it provides a more conveni
 \medskip
 
 \textbf{Question 3.} See the implementation in the file \texttt{src/pso.cpp}.
+Our fitness function is defined as the euclidian distance of the path, plus infinity if the path crosses an obstacle. This way, the algorithm will try to find a valid path that minimizes the distance to the goal point.
 
 \medskip
 
@@ -37,54 +45,7 @@ For visualization, we used Python with Matplotlib, as it provides a more conveni
 
 \medskip
 
-\textbf{Question 5.} See Algorithm~\ref{alg:pso} for the pseudocode.
-
-\begin{algorithm}[!h]
-    \DontPrintSemicolon
-    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
-
-    \Input{Problem scenario $P$, iterations $I$, constants $c_1, c_2, w$}
-    \Output{Global best path $g_{best}$ and its cost $f(g_{best})$}
-
-    \BlankLine
-    Initialize $g_{best}$ with the first particle's waypoints\;
-    \For{$iter = 1$ \KwTo$I$}{
-        \BlankLine
-        \tcp{Evaluate Fitness and Update Memory}
-        \ForEach{particle $p$ in swarm}{
-            $cost \leftarrow \text{fitness}(p.waypoints, P)$\;
-            
-            \If{$cost < p.best\_cost$}{
-                $p.best\_cost \leftarrow cost$\;
-                $p.best\_waypoints \leftarrow p.waypoints$\;
-            }
-            
-            \If{$cost < g_{best}.cost$}{
-                $g_{best}.cost \leftarrow cost$\;
-                $g_{best}.waypoints \leftarrow p.waypoints$\;
-            }
-        }
-
-        \BlankLine
-        \tcp{Update Kinematics}
-        \ForEach{particle $p$ in swarm}{
-            \For{each waypoint $i$ in path}{
-                $r_1, r_2 \leftarrow \text{random}(0, 1)$\;
-                
-                \tcp{Velocity Update}
-                $v_i \leftarrow w \cdot v_i + c_1 \cdot r_1 \cdot (p.best\_waypoints_i - p.waypoints_i) + c_2 \cdot r_2 \cdot (g_{best}.waypoints_i - p.waypoints_i)$\;
-                
-                \tcp{Position Update}
-                $p.waypoints_i \leftarrow p.waypoints_i + v_i$\;
-                
-                \tcp{Boundary Constraint}
-                $p.waypoints_i \leftarrow \text{clamp}(p.waypoints_i, P.\min, P.\max)$\;
-            }
-        }
-    }
-    \Return{$g_{best}$}
-    \caption{Particle Swarm Optimization for Path Planning}\label{alg:pso}
-\end{algorithm}
+\textbf{Question 5.} See Algorithm~\ref{alg:pso} for the pseudocode in the appendix.
 
 \medskip
 
@@ -95,6 +56,7 @@ Indeed, for each iteration, we evaluate the fitness of each particle, which take
 \medskip
 
 \textbf{Question 7.} See the implementation in the file \texttt{src/pso.cpp}.
+We implemented the algorithm following the pseudocode given for question 5. We initialize the particles with random waypoints, and then we iteratively evaluate their fitness, update their memory of the best position, and update their velocity and position according to the PSO equations. We also ensure that the waypoints stay within the bounds of the environment by clamping their coordinates after each update.
 
 \medskip
 
@@ -110,17 +72,6 @@ const double C1 = 2.0; // cognitive coefficient
 const double C2 = 2.0; // social coefficient
 const double W = 0.75;  // inertia weight
 \end{verbatim}
-
-\begin{figure}[ht]
-\centering
-\includegraphics[width=0.4\textwidth]{assets/scenario0.png}\hspace{0.05\textwidth}%
-\includegraphics[width=0.4\textwidth]{assets/scenario1.png}\\[0.5cm]
-\includegraphics[width=0.4\textwidth]{assets/scenario2.png}\hspace{0.05\textwidth}%
-\includegraphics[width=0.4\textwidth]{assets/scenario3.png}\\[0.5cm]
-\includegraphics[width=0.4\textwidth]{assets/scenario4.png}
-\caption{Test scenarios 0-4}
-\label{fig:scenarios}
-\end{figure}
 
 \medskip
 
@@ -169,11 +120,11 @@ int stagnation_threshold = 15;
 
 \medskip
 
-\textbf{Question 12.} To improve the performance of the algorithm, we could refine the fitness function. Instead of simply being the euclidian distance plus infinity if the path crosses an obstacle, we can make it output the euclidian distance plus a penalty proportional to the distance crossed in the obstacles.
+\textbf{Question 12.} To improve the performance of the algorithm, we can refine the fitness function. Instead of simply being the euclidian distance plus infinity if the path crosses an obstacle, we can make it output the euclidian distance plus a penalty proportional to the distance crossed in the obstacles.
 
 This way, the algorithm would converge faster, especially in cases with lots of obstacles, as it would be able to differentiate between paths that are close to the optimal one but cross an obstacle and paths that are far from the optimal one but do not cross any obstacle.
 
-To do so, we compute the intersection of the path with the obstacles in \texttt{src/utils.cpp}. To avoid any situation where the alogorithm would prefer crossing an obstacle to reduce the distance, we can set the penalty to be a large constant multiplied by the distance crossed in the obstacle.
+To do so, we compute the intersection of the path with the obstacles in \texttt{src/utils.cpp}. To avoid any situation where the algorithm would prefer crossing an obstacle to reduce the distance, we can set the penalty to be a large constant multiplied by the distance crossed in the obstacle.
 
 \begin{verbatim}
 const int NUM_PARTICLES = 200;
@@ -208,7 +159,7 @@ int stagnation_threshold = 15;
 }
 \end{table}
 
-As we can see in Table~\ref{tab:all_results}, adding the different improvements to the basic PSO algorithm allows us to significantly reduce the cost of the solution and the time needed to find it.
+As we can see in Table~\ref{tab:all_results}, adding the different improvements to the basic PSO algorithm allows us to significantly reduce the cost of the solution and the time needed to find it. The final algorithm outputs a path that is very close to the optimal one, and does so in a reasonable amount of time, even in the most complex scenarios.
 
 \medskip
 
@@ -232,108 +183,7 @@ Most of the work is done by BuildRRT (Algorithm \ref{alg:rrt}), which builds the
 
 The method addVertex (Algorithm \ref{AddVertex}) is used to update the tree, given a point and the parent vertex.
 
-\begin{algorithm}[!h]
-    \DontPrintSemicolon
-    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
-    \SetKwProg{Fn}{Function}{:}{}
-    
-    \Fn{\textsc{AddVertex}$(v, parent\_index)$}{
-        Append $v$ to $tree.vertices$\;
-        Append $parent\_index$ to $tree.parents$\;
-        $cost \leftarrow tree.costs[parent\_index] + d(tree.vertices[parent\_index], v)$\;
-        Append $cost$ to $tree.costs$\;
-    }
-    \caption{AddVertex - Add a vertex to the tree}
-    \label{AddVertex}
-\end{algorithm}
 
-
-\begin{algorithm}[!h]
-    \DontPrintSemicolon
-    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
-    \Input{Problem $P$, step size $\delta_s$, rewiring radius $\delta_r$, max iterations $I_{max}$}
-    \Output{Tree connecting start to goal}
-    \BlankLine
-    $iterations \leftarrow 0$\;
-    \While{$iterations < I_{max}$}{
-        \BlankLine
-        \tcp{Sample Random Point}
-        $v_r \leftarrow$ random point in $[0, P.x_{max}] \times [0, P.y_{max}]$\;
-        
-        \If{$v_r$ is inside an obstacle}{
-            \textbf{continue}\;
-        }
-        \BlankLine
-        \tcp{Find Nearest Vertex}
-        $v_n \leftarrow \argmin_{v \in tree.vertices} d(v, v_r)$\;
-        \BlankLine
-        \tcp{Steer Toward Random Point}
-        \eIf{$d(v_n, v_r) \leq \delta_s$}{
-            $v \leftarrow v_r$\;
-        }{
-            $\theta \leftarrow \arctan2(v_r.y - v_n.y, v_r.x - v_n.x)$\;
-            $v.x \leftarrow v_n.x + \delta_s \cos(\theta)$\;
-            $v.y \leftarrow v_n.y + \delta_s \sin(\theta)$\;
-        }
-        \BlankLine
-        \tcp{Choose Best Parent}
-        $parent \leftarrow -1$\;
-        \If{no collision between $v_n$ and $v$}{
-            $parent \leftarrow v_n$\;
-        }
-        \ForEach{vertex $v_i$ in $tree.vertices$}{
-            \If{$d(v_i, v) < \delta_r$ \textbf{and} no collision between $v_i$ and $v$}{
-                $cost_{new} \leftarrow tree.costs[v_i] + d(v_i, v)$\;
-                \If{$parent = -1$ \textbf{or} $cost_{new} < tree.costs[parent] + d(parent, v)$}{
-                    $parent \leftarrow v_i$\;
-                }
-            }
-        }
-        \If{$parent = -1$}{
-            \textbf{continue}\tcp*{No valid parent found}
-        }
-        \BlankLine
-        \textsc{AddVertex}$(v, parent)$\;
-        $idx_v \leftarrow |tree.vertices| - 1$\;
-        \BlankLine
-        \tcp{Rewire Neighbors}
-        \ForEach{vertex $v_i$ in $tree.vertices$}{
-            \If{$d(v_i, v) < \delta_r$ \textbf{and} no collision between $v_i$ and $v$}{
-                $cost_{via\_v} \leftarrow tree.costs[idx_v] + d(v, v_i)$\;
-                \If{$tree.costs[i] > cost_{via\_v}$}{
-                    $tree.parents[i] \leftarrow idx_v$\;
-                    $tree.costs[i] \leftarrow cost_{via\_v}$\;
-                }
-            }
-        }
-        \BlankLine
-        \tcp{Check Goal Reachability}
-        \If{$d(v, P.goal) \leq \delta_s$ \textbf{and} no collision between $v$ and $P.goal$}{
-            \textsc{AddVertex}$(P.goal, idx_v)$\;
-            \textbf{break}\tcp*{Goal reached}
-        }
-        \BlankLine
-        $iterations \leftarrow iterations + 1$\;
-    }
-    \caption{BuildRRT}\label{alg:rrt}
-\end{algorithm}
-
-\begin{algorithm}[!h]
-    \DontPrintSemicolon
-    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
-    \SetKwProg{Fn}{Function}{:}{}
-    
-    \Fn{\textsc{RRTPath}$(P, \delta_s, \delta_r, I_{max})$}{
-        \Input{Problem $P$, step size $\delta_s$, radius $\delta_r$, iterations $I_{max}$}
-        \Output{Path from start to goal}
-        \BlankLine
-        \textsc{BuildRRT}$(P, \delta_s, \delta_r, I_{max})$\;
-        $goal\_index \leftarrow |tree.vertices| - 1$\tcp*{Goal is last vertex}
-        \Return{\textsc{ReconstructPath}$(goal\_index)$}
-    }
-    \caption{RRTPath - Main Path Planning Function}
-    \label{RRTPath}
-\end{algorithm}
 
 \medskip
 
@@ -437,10 +287,178 @@ The metrics for PSO are taken from the DL + Refined fitness version.
 
 \medskip
 
-\textbf{Question 25.} We use Github for version control and to share our code. It is a very convenient tool for collaboration, as it allows us to easily track changes, manage branches, and review each other's code.
+\textbf{Question 25.} We used Github for version control and to share our code. It is a very convenient tool for collaboration, as it allows us to easily track changes, manage branches, and review each other's code.
 
 We also used GitHub Copilot to help us with some of the redundant code, such as the verification of the input or the geometry functions. It is a very useful tool for increasing productivity, as it can generate code snippets based on the context, which saves us time and allows us to focus on the more complex parts of the implementation. However, we used it very carefully, as it can sometimes generate incorrect code, so we always reviewed the generated code line by line to ensure its correctness.
 
 \medskip
+
+\appendix
+
+\section{Pseudo-code}
+
+\begin{algorithm}[H]
+    \DontPrintSemicolon
+    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+
+    \Input{Problem scenario $P$, iterations $I$, constants $c_1, c_2, w$}
+    \Output{Global best path $g_{best}$ and its cost $f(g_{best})$}
+
+    \BlankLine
+    Initialize $g_{best}$ with the first particle's waypoints\;
+    \For{$iter = 1$ \KwTo$I$}{
+        \BlankLine
+        \tcp{Evaluate Fitness and Update Memory}
+        \ForEach{particle $p$ in swarm}{
+            $cost \leftarrow \text{fitness}(p.waypoints, P)$\;
+            
+            \If{$cost < p.best\_cost$}{
+                $p.best\_cost \leftarrow cost$\;
+                $p.best\_waypoints \leftarrow p.waypoints$\;
+            }
+            
+            \If{$cost < g_{best}.cost$}{
+                $g_{best}.cost \leftarrow cost$\;
+                $g_{best}.waypoints \leftarrow p.waypoints$\;
+            }
+        }
+
+        \BlankLine
+        \tcp{Update Kinematics}
+        \ForEach{particle $p$ in swarm}{
+            \For{each waypoint $i$ in path}{
+                $r_1, r_2 \leftarrow \text{random}(0, 1)$\;
+                
+                \tcp{Velocity Update}
+                $v_i \leftarrow w \cdot v_i + c_1 \cdot r_1 \cdot (p.best\_waypoints_i - p.waypoints_i) + c_2 \cdot r_2 \cdot (g_{best}.waypoints_i - p.waypoints_i)$\;
+                
+                \tcp{Position Update}
+                $p.waypoints_i \leftarrow p.waypoints_i + v_i$\;
+                
+                \tcp{Boundary Constraint}
+                $p.waypoints_i \leftarrow \text{clamp}(p.waypoints_i, P.\min, P.\max)$\;
+            }
+        }
+    }
+    \Return{$g_{best}$}
+    \caption{Particle Swarm Optimization for Path Planning}\label{alg:pso}
+\end{algorithm}
+
+\begin{algorithm}[H]
+    \DontPrintSemicolon
+    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+    \SetKwProg{Fn}{Function}{:}{}
+    
+    \Fn{\textsc{AddVertex}$(v, parent\_index)$}{
+        Append $v$ to $tree.vertices$\;
+        Append $parent\_index$ to $tree.parents$\;
+        $cost \leftarrow tree.costs[parent\_index] + d(tree.vertices[parent\_index], v)$\;
+        Append $cost$ to $tree.costs$\;
+    }
+    \caption{AddVertex - Add a vertex to the tree}
+    \label{AddVertex}
+\end{algorithm}
+
+
+\begin{algorithm}[H]
+    \DontPrintSemicolon
+    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+    \Input{Problem $P$, step size $\delta_s$, rewiring radius $\delta_r$, max iterations $I_{max}$}
+    \Output{Tree connecting start to goal}
+    \BlankLine
+    $iterations \leftarrow 0$\;
+    \While{$iterations < I_{max}$}{
+        \BlankLine
+        \tcp{Sample Random Point}
+        $v_r \leftarrow$ random point in $[0, P.x_{max}] \times [0, P.y_{max}]$\;
+        
+        \If{$v_r$ is inside an obstacle}{
+            \textbf{continue}\;
+        }
+        \BlankLine
+        \tcp{Find Nearest Vertex}
+        $v_n \leftarrow \argmin_{v \in tree.vertices} d(v, v_r)$\;
+        \BlankLine
+        \tcp{Steer Toward Random Point}
+        \eIf{$d(v_n, v_r) \leq \delta_s$}{
+            $v \leftarrow v_r$\;
+        }{
+            $\theta \leftarrow \arctan2(v_r.y - v_n.y, v_r.x - v_n.x)$\;
+            $v.x \leftarrow v_n.x + \delta_s \cos(\theta)$\;
+            $v.y \leftarrow v_n.y + \delta_s \sin(\theta)$\;
+        }
+        \BlankLine
+        \tcp{Choose Best Parent}
+        $parent \leftarrow -1$\;
+        \If{no collision between $v_n$ and $v$}{
+            $parent \leftarrow v_n$\;
+        }
+        \ForEach{vertex $v_i$ in $tree.vertices$}{
+            \If{$d(v_i, v) < \delta_r$ \textbf{and} no collision between $v_i$ and $v$}{
+                $cost_{new} \leftarrow tree.costs[v_i] + d(v_i, v)$\;
+                \If{$parent = -1$ \textbf{or} $cost_{new} < tree.costs[parent] + d(parent, v)$}{
+                    $parent \leftarrow v_i$\;
+                }
+            }
+        }
+        \If{$parent = -1$}{
+            \textbf{continue}\tcp*{No valid parent found}
+        }
+        \BlankLine
+        \textsc{AddVertex}$(v, parent)$\;
+        $idx_v \leftarrow |tree.vertices| - 1$\;
+        \BlankLine
+        \tcp{Rewire Neighbors}
+        \ForEach{vertex $v_i$ in $tree.vertices$}{
+            \If{$d(v_i, v) < \delta_r$ \textbf{and} no collision between $v_i$ and $v$}{
+                $cost_{via\_v} \leftarrow tree.costs[idx_v] + d(v, v_i)$\;
+                \If{$tree.costs[i] > cost_{via\_v}$}{
+                    $tree.parents[i] \leftarrow idx_v$\;
+                    $tree.costs[i] \leftarrow cost_{via\_v}$\;
+                }
+            }
+        }
+        \BlankLine
+        \tcp{Check Goal Reachability}
+        \If{$d(v, P.goal) \leq \delta_s$ \textbf{and} no collision between $v$ and $P.goal$}{
+            \textsc{AddVertex}$(P.goal, idx_v)$\;
+            \textbf{break}\tcp*{Goal reached}
+        }
+        \BlankLine
+        $iterations \leftarrow iterations + 1$\;
+    }
+    \caption{BuildRRT}\label{alg:rrt}
+\end{algorithm}
+
+\begin{algorithm}[H]
+    \DontPrintSemicolon
+    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+    \SetKwProg{Fn}{Function}{:}{}
+    
+    \Fn{\textsc{RRTPath}$(P, \delta_s, \delta_r, I_{max})$}{
+        \Input{Problem $P$, step size $\delta_s$, radius $\delta_r$, iterations $I_{max}$}
+        \Output{Path from start to goal}
+        \BlankLine
+        \textsc{BuildRRT}$(P, \delta_s, \delta_r, I_{max})$\;
+        $goal\_index \leftarrow |tree.vertices| - 1$\tcp*{Goal is last vertex}
+        \Return{\textsc{ReconstructPath}$(goal\_index)$}
+    }
+    \caption{RRTPath - Main Path Planning Function}
+    \label{RRTPath}
+\end{algorithm}
+
+\section{Visualization}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.4\textwidth]{assets/scenario0.png}\hspace{0.05\textwidth}%
+\includegraphics[width=0.4\textwidth]{assets/scenario1.png}\\[0.5cm]
+\includegraphics[width=0.4\textwidth]{assets/scenario2.png}\hspace{0.05\textwidth}%
+\includegraphics[width=0.4\textwidth]{assets/scenario3.png}\\[0.5cm]
+\includegraphics[width=0.4\textwidth]{assets/scenario4.png}
+\caption{Test scenarios 0-4}
+\label{fig:scenarios}
+\end{figure}
+
 
 \end{document}
