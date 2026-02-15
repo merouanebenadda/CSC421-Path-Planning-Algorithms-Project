@@ -221,129 +221,166 @@ See the implementation in the file \texttt{src/RRT.hpp}.
 
 \textbf{Question 14.}
 
-To correspond to the conventions taken before, the method gives the vertices coordinates, from the root to the goal, exluding the extremities.
+To correspond to the conventions taken before, the method gives the vertices coordinates, from the root to the goal, excluding the extremities.
 See the implementation in the files \texttt{src/RRT.hpp} and \texttt{src/RRT.cpp}.
 
 \medskip
 
-
-
-\begin{algorithm}[H]
-\SetAlgoLined
-\caption{AddVertex}
-\KwIn{Point $v$, index $parent\_index$}
-Ajouter $v$ à $tree.vertices$\;
-Ajouter $parent\_index$ à $tree.parents$\;
-$cost \gets tree.costs[parent\_index] + d(tree.vertices[parent\_index], v)$\;
-Ajouter $cost$ à $tree.costs$\;
-\end{algorithm}
-
-\begin{algorithm}[H]
-\SetAlgoLined
-\caption{ReconstructPath}
-\KwIn{Index $vertex\_index$}
-\KwOut{Chemin de points}
-$path \gets \emptyset$\;
-$current \gets tree.parents[vertex\_index]$\tcp*{Partir du parent du goal}
-\While{$tree.parents[current] \neq -1$}{
-    Ajouter $tree.vertices[current]$ à $path$\;
-    $current \gets tree.parents[current]$\;
-}
-Inverser $path$\tcp*{Obtenir le chemin de start à goal}
-\Return $path$\;
-\end{algorithm}
-
-\begin{algorithm}[H]
-\SetAlgoLined
-\caption{BuildRRT (variante RRT*)}
-\KwIn{Problème $problem$, distance $\delta_s$, rayon $\delta_r$, entier $max\_iterations$}
-
-$iterations \gets 0$\;
-\While{$iterations < max\_iterations$}{
-    \tcp{Échantillonner un point aléatoire}
-    $v_r \gets$ point aléatoire dans $[0, x_{max}] \times [0, y_{max}]$\;
-    
-    \If{$v_r$ est dans un obstacle}{
-        \textbf{continuer}\;
-    }
-    
-    \tcp{Trouver le sommet le plus proche}
-    $v_n \gets \argmin_{v \in tree.vertices} d(v, v_r)$\;
-    
-    \tcp{Créer un nouveau point vers $v_r$ à distance max $\delta_s$}
-    \eIf{$d(v_n, v_r) \leq \delta_s$}{
-        $v \gets v_r$\;
-    }{
-        $\theta \gets \arctan2(v_r.y - v_n.y, v_r.x - v_n.x)$\;
-        $v.x \gets v_n.x + \delta_s \cos(\theta)$\;
-        $v.y \gets v_n.y + \delta_s \sin(\theta)$\;
-    }
-    
-    \tcp{Choisir le meilleur parent dans le rayon $\delta_r$ (RRT*)}
-    $parent \gets$ NULL\;
-    \If{pas de collision entre $v_n$ et $v$}{
-        $parent \gets v_n$\;
-    }
-    
-    \ForEach{$v_i \in tree.vertices$}{
-        \If{$d(v_i, v) < \delta_r$ \textbf{et} pas de collision entre $v_i$ et $v$}{
-            $cost_{new} \gets tree.costs[v_i] + d(v_i, v)$\;
-            \If{$parent =$ NULL \textbf{ou} $cost_{new} < tree.costs[parent] + d(parent, v)$}{
-                $parent \gets v_i$\;
-            }
-        }
-    }
-    
-    \If{$parent =$ NULL}{
-        \textbf{continuer}\tcp*{Aucun parent valide trouvé}
-    }
-    
-    \textsc{AddVertex}$(v, parent)$\;
-    $idx_v \gets |tree.vertices| - 1$\;
-    
-    \tcp{Rewiring : recâbler les voisins (RRT*)}
-    \For{$i \gets 0$ \KwTo $|tree.vertices| - 1$}{
-        \If{$d(tree.vertices[i], v) < \delta_r$ \textbf{et} pas de collision}{
-            $cost_{via\_v} \gets tree.costs[idx_v] + d(v, tree.vertices[i])$\;
-            \If{$tree.costs[i] > cost_{via\_v}$}{
-                $tree.parents[i] \gets idx_v$\;
-                $tree.costs[i] \gets cost_{via\_v}$\;
-            }
-        }
-    }
-    
-    \tcp{Vérifier si le goal est atteignable}
-    \If{$d(v, goal) \leq \delta_s$ \textbf{et} pas de collision entre $v$ et $goal$}{
-        \textsc{AddVertex}$(goal, idx_v)$\;
-        \textbf{sortir}\tcp*{Goal atteint}
-    }
-    
-    $iterations \gets iterations + 1$\;
-}
-\end{algorithm}
-
-\begin{algorithm}[H]
-\SetAlgoLined
-\caption{RRTPath - Planification de chemin}
-\KwIn{Problème $problem$, distance $\delta_s$, rayon $\delta_r$, entier $max\_iterations$}
-\KwOut{Chemin de points}
-
-\textsc{BuildRRT}$(problem, \delta_s, \delta_r, max\_iterations)$\;
-$goal\_index \gets |tree.vertices| - 1$\tcp*{Le goal est le dernier sommet}
-\Return \textsc{ReconstructPath}$(goal\_index)$\;
-\end{algorithm}
-
-
-
 \textbf{Question 15.}
+
+Most of the work is done by BuildRRT (Algorithm \ref{alg:rrt}), which builds the tree. RRTPath (Algorithm \ref{RRTPath}) only calls BuildRRT, and then reconstructs the path with reconstructPath implemented in Question 14.
+
+The method addVertex (Algorithm \ref{AddVertex}) is used to update the tree, given a point and the parent vertex.
+
+\begin{algorithm}[!h]
+    \DontPrintSemicolon
+    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+    \SetKwProg{Fn}{Function}{:}{}
+    
+    \Fn{\textsc{AddVertex}$(v, parent\_index)$}{
+        Append $v$ to $tree.vertices$\;
+        Append $parent\_index$ to $tree.parents$\;
+        $cost \leftarrow tree.costs[parent\_index] + d(tree.vertices[parent\_index], v)$\;
+        Append $cost$ to $tree.costs$\;
+    }
+    \caption{AddVertex - Add a vertex to the tree}
+    \label{AddVertex}
+\end{algorithm}
+
+
+\begin{algorithm}[!h]
+    \DontPrintSemicolon
+    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+    \Input{Problem $P$, step size $\delta_s$, rewiring radius $\delta_r$, max iterations $I_{max}$}
+    \Output{Tree connecting start to goal}
+    \BlankLine
+    $iterations \leftarrow 0$\;
+    \While{$iterations < I_{max}$}{
+        \BlankLine
+        \tcp{Sample Random Point}
+        $v_r \leftarrow$ random point in $[0, P.x_{max}] \times [0, P.y_{max}]$\;
+        
+        \If{$v_r$ is inside an obstacle}{
+            \textbf{continue}\;
+        }
+        \BlankLine
+        \tcp{Find Nearest Vertex}
+        $v_n \leftarrow \argmin_{v \in tree.vertices} d(v, v_r)$\;
+        \BlankLine
+        \tcp{Steer Toward Random Point}
+        \eIf{$d(v_n, v_r) \leq \delta_s$}{
+            $v \leftarrow v_r$\;
+        }{
+            $\theta \leftarrow \arctan2(v_r.y - v_n.y, v_r.x - v_n.x)$\;
+            $v.x \leftarrow v_n.x + \delta_s \cos(\theta)$\;
+            $v.y \leftarrow v_n.y + \delta_s \sin(\theta)$\;
+        }
+        \BlankLine
+        \tcp{Choose Best Parent}
+        $parent \leftarrow -1$\;
+        \If{no collision between $v_n$ and $v$}{
+            $parent \leftarrow v_n$\;
+        }
+        \ForEach{vertex $v_i$ in $tree.vertices$}{
+            \If{$d(v_i, v) < \delta_r$ \textbf{and} no collision between $v_i$ and $v$}{
+                $cost_{new} \leftarrow tree.costs[v_i] + d(v_i, v)$\;
+                \If{$parent = -1$ \textbf{or} $cost_{new} < tree.costs[parent] + d(parent, v)$}{
+                    $parent \leftarrow v_i$\;
+                }
+            }
+        }
+        \If{$parent = -1$}{
+            \textbf{continue}\tcp*{No valid parent found}
+        }
+        \BlankLine
+        \textsc{AddVertex}$(v, parent)$\;
+        $idx_v \leftarrow |tree.vertices| - 1$\;
+        \BlankLine
+        \tcp{Rewire Neighbors}
+        \ForEach{vertex $v_i$ in $tree.vertices$}{
+            \If{$d(v_i, v) < \delta_r$ \textbf{and} no collision between $v_i$ and $v$}{
+                $cost_{via\_v} \leftarrow tree.costs[idx_v] + d(v, v_i)$\;
+                \If{$tree.costs[i] > cost_{via\_v}$}{
+                    $tree.parents[i] \leftarrow idx_v$\;
+                    $tree.costs[i] \leftarrow cost_{via\_v}$\;
+                }
+            }
+        }
+        \BlankLine
+        \tcp{Check Goal Reachability}
+        \If{$d(v, P.goal) \leq \delta_s$ \textbf{and} no collision between $v$ and $P.goal$}{
+            \textsc{AddVertex}$(P.goal, idx_v)$\;
+            \textbf{break}\tcp*{Goal reached}
+        }
+        \BlankLine
+        $iterations \leftarrow iterations + 1$\;
+    }
+    \caption{BuildRRT}\label{alg:rrt}
+\end{algorithm}
+
+\begin{algorithm}[!h]
+    \DontPrintSemicolon
+    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+    \SetKwProg{Fn}{Function}{:}{}
+    
+    \Fn{\textsc{RRTPath}$(P, \delta_s, \delta_r, I_{max})$}{
+        \Input{Problem $P$, step size $\delta_s$, radius $\delta_r$, iterations $I_{max}$}
+        \Output{Path from start to goal}
+        \BlankLine
+        \textsc{BuildRRT}$(P, \delta_s, \delta_r, I_{max})$\;
+        $goal\_index \leftarrow |tree.vertices| - 1$\tcp*{Goal is last vertex}
+        \Return{\textsc{ReconstructPath}$(goal\_index)$}
+    }
+    \caption{RRTPath - Main Path Planning Function}
+    \label{RRTPath}
+\end{algorithm}
 
 \medskip
 
 \textbf{Question 16.}
 
+For one iteration of the while loop of the algorithm BuildRRT, the time complexity is a $O(NM)$, where $N$ is the number of nodes in the tree and $M$ the number of obstacles. Indeed, the two loops at lines 16-20 and 25-30 take at most that amount of time, as in the worst case all vertices are at a distance to $v$ lower than $\delta_s$, and all obstacles have to be tried.
+All other instructions in an iteration have a strictly lower complexity than that.
+
+If a tree is built before reaching the maximum number of iterations $I_{max}$, at the iteration $i$, there are less than $i$ vertices in the tree, as there is at most one node created by iteration. That is why, overall, the time complexity is $O(M I^2)$, where $I$ iterations are necessary to build a tree reaching the goal point.
+Indeed \texttt{reconstructTree} takes at most $O(I)$ time in execution.
+
+The hyperparameter $\delta_s$ has an impact on real time execution. Increasing it might reduce the number of iterations needed, as each one makes a more significant advance. However, this increases the complexity at each iteration because more vertices will be at a lower distance from $v$ than $\delta_s$
+
 \medskip
 
 \textbf{Question 17.}
+
+See the implementation in the file \texttt{RRT.cpp}.
+
+\medskip
+
+\textbf{Question 18.}
+
+I initially chose, for the hyperparameters $\delta_s = 100$ and $\delta_r = 100$. Considering the size of the zone (1000*1000), it seemed appropriate. After trying on different scenarios, it appears that increasing $delta_s$ gives best results in areas with few obstacles.
+
+Here are the results for $\delta_s = 100$ and $\delta_r = 100$:
+
+\begin{table}[ht]
+\centering
+\caption{RRT results for different scenarios}
+\label{tab:rrt_results}
+%\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}l|c|c|c@{}}
+\toprule
+\textbf{Scenario} & \textbf{Path length} & \textbf{Iterations} & \textbf{CPU Time (s)} \\
+\midrule
+0 & 1742.09 & 224 & 0 \\
+1 & 1718.12 & 533 & 0.002 \\
+2 & 1739.89 &  242 & 0.001 \\
+3 & 1757.14 & 410 & 0.004 \\
+4 & 2186.43 & 721 & 0.009 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+
 
 \medskip
 
