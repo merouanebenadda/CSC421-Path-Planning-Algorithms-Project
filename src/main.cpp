@@ -385,10 +385,10 @@ int test_rrt(int argc, char* argv[]){
         return 1;
     }
 
-    // PSO optimization
+    // RRT
     RRT rrt(problem); 
     clock_t start_time = clock();
-    auto best_path = rrt.rrtPath(problem, RRT_DELTA_S, RRT_DELTA_R, RRT_MAX_ITERATIONS);
+    auto [best_path, iterations, path_cost] = rrt.rrtPath(problem, RRT_DELTA_S, RRT_DELTA_R, RRT_MAX_ITERATIONS);
     clock_t end_time = clock();
     double cpu_time = double(end_time - start_time) / CLOCKS_PER_SEC;
 
@@ -399,6 +399,9 @@ int test_rrt(int argc, char* argv[]){
     }
 
     cout << "CPU time: " << cpu_time << " seconds" << endl;
+    cout << "Iterations: " << iterations << endl;
+    cout << "Path cost: " << path_cost << endl;
+
 
 
     visualize(argc, argv, best_path, &rrt.tree);

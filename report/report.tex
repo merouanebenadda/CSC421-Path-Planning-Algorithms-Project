@@ -7,8 +7,11 @@
 \usepackage{multirow} % For multirow in tables
 \usepackage{float} % For float positioning option H
 \usepackage[utf8]{inputenc}
-\usepackage{algorithm}
-\usepackage{algpseudocode}
+%\usepackage{algorithm}
+%\usepackage{algpseudocode}
+
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
 
 
 \begin{document}
@@ -225,112 +228,111 @@ See the implementation in the files \texttt{src/RRT.hpp} and \texttt{src/RRT.cpp
 
 
 
-
-
-\begin{algorithm}
+\begin{algorithm}[H]
+\SetAlgoLined
 \caption{AddVertex}
-\begin{algorithmic}[1]
-\Procedure{AddVertex}{$v$, $parent\_index$}
-    \State $tree.vertices \gets tree.vertices \cup \{v\}$
-    \State $tree.parents \gets tree.parents \cup \{parent\_index\}$
-    \State $cost \gets tree.costs[parent\_index] + d(tree.vertices[parent\_index], v)$
-    \State $tree.costs \gets tree.costs \cup \{cost\}$
-\EndProcedure
-\end{algorithmic}
+\KwIn{Point $v$, index $parent\_index$}
+Ajouter $v$ à $tree.vertices$\;
+Ajouter $parent\_index$ à $tree.parents$\;
+$cost \gets tree.costs[parent\_index] + d(tree.vertices[parent\_index], v)$\;
+Ajouter $cost$ à $tree.costs$\;
 \end{algorithm}
 
-\begin{algorithm}
+\begin{algorithm}[H]
+\SetAlgoLined
 \caption{ReconstructPath}
-\begin{algorithmic}[1]
-\Procedure{ReconstructPath}{$vertex\_index$}
-    \State $path \gets \emptyset$
-    \State $current \gets tree.parents[vertex\_index]$ \Comment{Start from parent of goal}
-    \While{$tree.parents[current] \neq -1$}
-        \State $path \gets path \cup \{tree.vertices[current]\}$
-        \State $current \gets tree.parents[current]$
-    \EndWhile
-    \State \textbf{reverse}$(path)$ \Comment{Get path from start to goal}
-    \State \Return $path$
-\EndProcedure
-\end{algorithmic}
+\KwIn{Index $vertex\_index$}
+\KwOut{Chemin de points}
+$path \gets \emptyset$\;
+$current \gets tree.parents[vertex\_index]$\tcp*{Partir du parent du goal}
+\While{$tree.parents[current] \neq -1$}{
+    Ajouter $tree.vertices[current]$ à $path$\;
+    $current \gets tree.parents[current]$\;
+}
+Inverser $path$\tcp*{Obtenir le chemin de start à goal}
+\Return $path$\;
 \end{algorithm}
 
-\begin{algorithm}
-\caption{BuildRRT (RRT* variant)}
-\begin{algorithmic}[1]
-\Procedure{BuildRRT}{$problem$, $\delta_s$, $\delta_r$, $max\_iterations$}
-    \State $iterations \gets 0$
-    \While{$iterations < max\_iterations$}
-        \State $v_r \gets$ \Call{RandomPoint}{$problem.x_{max}$, $problem.y_{max}$}
-        \If{\Call{PointInObstacles}{$v_r$, $obstacles$}}
-            \State \textbf{continue} \Comment{Skip if inside obstacle}
-        \EndIf
-        
-        \State \Comment{Find nearest vertex}
-        \State $v_n \gets \argmin_{v \in tree.vertices} d(v, v_r)$
-        
-        \State \Comment{Steer towards $v_r$ at max distance $\delta_s$}
-        \If{$d(v_n, v_r) \leq \delta_s$}
-            \State $v \gets v_r$
-        \Else
-            \State $\theta \gets \arctan2(v_r.y - v_n.y, v_r.x - v_n.x)$
-            \State $v \gets (v_n.x + \delta_s \cos\theta, v_n.y + \delta_s \sin\theta)$
-        \EndIf
-        
-        \State \Comment{Choose best parent within radius $\delta_r$ (RRT*)}
-        \State $parent \gets \bot$
-        \If{\textbf{not} \Call{Collision}{$v_n$, $v$}}
-            \State $parent \gets v_n$
-        \EndIf
-        \For{$v_i \in tree.vertices$}
-            \If{$d(v_i, v) < \delta_r$ \textbf{and not} \Call{Collision}{$v_i$, $v$}}
-                \State $cost_{new} \gets tree.costs[v_i] + d(v_i, v)$
-                \If{$parent = \bot$ \textbf{or} $cost_{new} < tree.costs[parent] + d(parent, v)$}
-                    \State $parent \gets v_i$
-                \EndIf
-            \EndIf
-        \EndFor
-        
-        \If{$parent = \bot$}
-            \State \textbf{continue} \Comment{No valid parent found}
-        \EndIf
-        
-        \State \Call{AddVertex}{$v$, $parent$}
-        \State $idx_v \gets |tree.vertices| - 1$
-        
-        \State \Comment{Rewire neighbors (RRT*)}
-        \For{$i \gets 0$ \textbf{to} $|tree.vertices| - 1$}
-            \If{$d(tree.vertices[i], v) < \delta_r$ \textbf{and not} \Call{Collision}{$tree.vertices[i]$, $v$}}
-                \State $cost_{through\_v} \gets tree.costs[idx_v] + d(v, tree.vertices[i])$
-                \If{$tree.costs[i] > cost_{through\_v}$}
-                    \State $tree.parents[i] \gets idx_v$
-                    \State $tree.costs[i] \gets cost_{through\_v}$
-                \EndIf
-            \EndIf
-        \EndFor
-        
-        \State \Comment{Check if goal is reachable}
-        \If{$d(v, goal) \leq \delta_s$ \textbf{and not} \Call{Collision}{$v$, $goal$}}
-            \State \Call{AddVertex}{$goal$, $idx_v$}
-            \State \textbf{break} \Comment{Goal reached}
-        \EndIf
-        
-        \State $iterations \gets iterations + 1$
-    \EndWhile
-\EndProcedure
-\end{algorithmic}
+\begin{algorithm}[H]
+\SetAlgoLined
+\caption{BuildRRT (variante RRT*)}
+\KwIn{Problème $problem$, distance $\delta_s$, rayon $\delta_r$, entier $max\_iterations$}
+
+$iterations \gets 0$\;
+\While{$iterations < max\_iterations$}{
+    \tcp{Échantillonner un point aléatoire}
+    $v_r \gets$ point aléatoire dans $[0, x_{max}] \times [0, y_{max}]$\;
+    
+    \If{$v_r$ est dans un obstacle}{
+        \textbf{continuer}\;
+    }
+    
+    \tcp{Trouver le sommet le plus proche}
+    $v_n \gets \argmin_{v \in tree.vertices} d(v, v_r)$\;
+    
+    \tcp{Créer un nouveau point vers $v_r$ à distance max $\delta_s$}
+    \eIf{$d(v_n, v_r) \leq \delta_s$}{
+        $v \gets v_r$\;
+    }{
+        $\theta \gets \arctan2(v_r.y - v_n.y, v_r.x - v_n.x)$\;
+        $v.x \gets v_n.x + \delta_s \cos(\theta)$\;
+        $v.y \gets v_n.y + \delta_s \sin(\theta)$\;
+    }
+    
+    \tcp{Choisir le meilleur parent dans le rayon $\delta_r$ (RRT*)}
+    $parent \gets$ NULL\;
+    \If{pas de collision entre $v_n$ et $v$}{
+        $parent \gets v_n$\;
+    }
+    
+    \ForEach{$v_i \in tree.vertices$}{
+        \If{$d(v_i, v) < \delta_r$ \textbf{et} pas de collision entre $v_i$ et $v$}{
+            $cost_{new} \gets tree.costs[v_i] + d(v_i, v)$\;
+            \If{$parent =$ NULL \textbf{ou} $cost_{new} < tree.costs[parent] + d(parent, v)$}{
+                $parent \gets v_i$\;
+            }
+        }
+    }
+    
+    \If{$parent =$ NULL}{
+        \textbf{continuer}\tcp*{Aucun parent valide trouvé}
+    }
+    
+    \textsc{AddVertex}$(v, parent)$\;
+    $idx_v \gets |tree.vertices| - 1$\;
+    
+    \tcp{Rewiring : recâbler les voisins (RRT*)}
+    \For{$i \gets 0$ \KwTo $|tree.vertices| - 1$}{
+        \If{$d(tree.vertices[i], v) < \delta_r$ \textbf{et} pas de collision}{
+            $cost_{via\_v} \gets tree.costs[idx_v] + d(v, tree.vertices[i])$\;
+            \If{$tree.costs[i] > cost_{via\_v}$}{
+                $tree.parents[i] \gets idx_v$\;
+                $tree.costs[i] \gets cost_{via\_v}$\;
+            }
+        }
+    }
+    
+    \tcp{Vérifier si le goal est atteignable}
+    \If{$d(v, goal) \leq \delta_s$ \textbf{et} pas de collision entre $v$ et $goal$}{
+        \textsc{AddVertex}$(goal, idx_v)$\;
+        \textbf{sortir}\tcp*{Goal atteint}
+    }
+    
+    $iterations \gets iterations + 1$\;
+}
 \end{algorithm}
 
-\begin{algorithm}
-\caption{RRT Path Planning}
-\begin{algorithmic}[1]
-\Procedure{RRTPath}{$problem$, $\delta_s$, $\delta_r$, $max\_iterations$}
-    \State \Call{BuildRRT}{$problem$, $\delta_s$, $\delta_r$, $max\_iterations$}
-    \State $goal\_index \gets |tree.vertices| - 1$
-    \State \Return \Call{ReconstructPath}{$goal\_index$}
-\EndProcedure
-\end{algorithmic}
+\begin{algorithm}[H]
+\SetAlgoLined
+\caption{RRTPath - Planification de chemin}
+\KwIn{Problème $problem$, distance $\delta_s$, rayon $\delta_r$, entier $max\_iterations$}
+\KwOut{Chemin de points}
+
+\textsc{BuildRRT}$(problem, \delta_s, \delta_r, max\_iterations)$\;
+$goal\_index \gets |tree.vertices| - 1$\tcp*{Le goal est le dernier sommet}
+\Return \textsc{ReconstructPath}$(goal\_index)$\;
 \end{algorithm}
+
 
 
 \textbf{Question 15.}

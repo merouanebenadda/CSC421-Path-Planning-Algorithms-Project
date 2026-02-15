@@ -3,6 +3,7 @@
 #include <math.h>
 #include <functional>
 #include <algorithm>
+#include <tuple>
 
 #include "RRT.hpp"
 #include "Problem.hpp"
@@ -37,7 +38,7 @@ std::vector<Point> RRT::reconstructPath(int vertex_index) const {
     return path;
 }
 
-void RRT::buildRRT(const Problem& problem, double delta_s, double delta_r, int max_iterations) {
+int RRT::buildRRT(const Problem& problem, double delta_s, double delta_r, int max_iterations) {
     // Implementation of the RRT algorithm to build the tree
     int iterations = 0;
     while(iterations < max_iterations){
@@ -105,11 +106,14 @@ void RRT::buildRRT(const Problem& problem, double delta_s, double delta_r, int m
 
         iterations++;
     }
+
+    return iterations;
 }
 
-std::vector<Point> RRT::rrtPath(const Problem& problem, double delta_s, double delta_r, int max_iterations) {
-    buildRRT(problem, delta_s, delta_r, max_iterations); 
-    return reconstructPath(tree.vertices.size() - 1); // The goal point is the last vertex added to the tree
+std::tuple<std::vector<Point>, int, double> RRT::rrtPath(const Problem& problem, double delta_s, double delta_r, int max_iterations) {
+    int iterations =buildRRT(problem, delta_s, delta_r, max_iterations); 
+    double path_cost = tree.costs.back(); // Cost of the path to the goal (last vertex added)
+    return std::make_tuple(reconstructPath(tree.vertices.size() - 1), iterations, path_cost); // The goal point is the last vertex added to the tree
 
 }
 
