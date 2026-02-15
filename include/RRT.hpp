@@ -3,6 +3,8 @@
 #include <vector>
 #include <string>
 
+#include "Problem.hpp"
+
 
 struct Tree{
     std::vector<Point> vertices;
