@@ -2,6 +2,10 @@
 
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
 \usepackage{amsmath} % For math symbols
+\usepackage{graphicx} % For including images
+\usepackage{booktabs} % For table formatting
+\usepackage{multirow} % For multirow in tables
+\usepackage{float} % For float positioning option H
 
 \begin{document}
 \title{INF421 PI\@: PATH PLANNING ALGORITHMS}
@@ -26,9 +30,9 @@ For visualization, we used Python with Matplotlib, as it provides a more conveni
 
 \medskip
 
-\textbf{Question 5.} 
+\textbf{Question 5.} See Algorithm~\ref{alg:pso} for the pseudocode.
 
-\begin{algorithm}[H]
+\begin{algorithm}[!h]
     \DontPrintSemicolon
     \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
 
@@ -87,61 +91,74 @@ Indeed, for each iteration, we evaluate the fitness of each particle, which take
 
 \medskip
 
-\textbf{Question 8.}
+\textbf{Question 8.} For the basic PSO algorithm, we had to pick an important number of particles because, since our fitness function is quite simple (the euclidian distance plus infinity if the path crosses an obstacle), finding a first valid path is a matter of luck, and the more particles we have, the more likely we are to find a valid path that we can optimize.
 
-\textbf{Scenario 0}
+As we can see in Figure~\ref{fig:scenarios}, the solutions are not always optimal.
 
-\textbf{Scenario 1}
+\begin{verbatim}
+const int NUM_PARTICLES = 100000;
+const int NUM_WAYPOINTS = 5;
+const int NUM_ITERATIONS = 1000;
+const double C1 = 2.0; // cognitive coefficient
+const double C2 = 2.0; // social coefficient
+const double W = 0.75;  // inertia weight
+\end{verbatim}
 
-\textbf{Scenario 2}
-
-\textbf{Scenario 3}
-
-\textbf{Scenario 4}
-
-
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.4\textwidth]{assets/scenario0.png}\hspace{0.05\textwidth}%
+\includegraphics[width=0.4\textwidth]{assets/scenario1.png}\\[0.5cm]
+\includegraphics[width=0.4\textwidth]{assets/scenario2.png}\hspace{0.05\textwidth}%
+\includegraphics[width=0.4\textwidth]{assets/scenario3.png}\\[0.5cm]
+\includegraphics[width=0.4\textwidth]{assets/scenario4.png}
+\caption{Test scenarios 0-4}
+\label{fig:scenarios}
+\end{figure}
 
 \medskip
 
 \textbf{Question 9.}
 
-\textbf{Scenario 0}
+The random restart method allows us to reduce the number of particles needed to find a valid path, as it gives the algorithm multiple chances to find a valid path by restarting the particles' positions after a certain number of iterations. This way, even if we start with a small number of particles, we can still find a valid path by giving the algorithm multiple attempts. The restart interval is sufficiently large to allow the particles to explore the search space and converge towards a good solution before being restarted.
 
-\textbf{Scenario 1}
+\begin{verbatim}
+const int NUM_PARTICLES = 1000;
+const int NUM_WAYPOINTS = 5;
+const int NUM_ITERATIONS = 50000;
+const int RESTART_INTERVAL = 2500;
+\end{verbatim}
 
-\textbf{Scenario 2}
-
-\textbf{Scenario 3}
-
-\textbf{Scenario 4}
 
 \medskip
 
-\textbf{Question 10.}
+\textbf{Question 10.} The cooling rate makes the temperature stay high for a longer time, which allows the algorithm to explore the search space more thoroughly and avoid getting stuck in local minima. We chose the initial temperature empirically, by testing different values and observing the convergence of the algorithm.
 
-\textbf{Scenario 0}
 
-\textbf{Scenario 1}
+\begin{verbatim}
+const int NUM_PARTICLES = 1000;
+const int NUM_WAYPOINTS = 5;
+const int NUM_ITERATIONS = 30000;
+const int RESTART_INTERVAL = 3000;
+double initial_temperature = 100.0;
+double cooling_rate = 0.99;
+\end{verbatim}
 
-\textbf{Scenario 2}
-
-\textbf{Scenario 3}
-
-\textbf{Scenario 4}
 
 \medskip
 
 \textbf{Question 11.}
 
-\textbf{Scenario 0}
+We chose a small stagnation threshold so the particles can quickly benefit from the dimensional learning when they are stuck in a local minimum. Since our fitness function is quite simple, it is easy for the particles to get stuck in local minima, especially in scenarios with many obstacles. By applying dimensional learning after a small number of iterations without improvement, we allow the particles to escape these local minima and explore new areas of the search space, which can lead to better solutions.
 
-\textbf{Scenario 1}
-
-\textbf{Scenario 2}
-
-\textbf{Scenario 3}
-
-\textbf{Scenario 4}
+\begin{verbatim}
+const int NUM_PARTICLES = 500;
+const int NUM_WAYPOINTS = 5;
+const int NUM_ITERATIONS = 30000;
+const int RESTART_INTERVAL = 5000;
+double initial_temperature = 100.0;
+double cooling_rate = 0.99;
+int stagnation_threshold = 15;
+\end{verbatim}
 
 \medskip
 
@@ -151,15 +168,40 @@ This way, the algorithm would converge faster, especially in cases with lots of 
 
 To do so, we compute the intersection of the path with the obstacles in \texttt{src/utils.cpp}. To avoid any situation where the alogorithm would prefer crossing an obstacle to reduce the distance, we can set the penalty to be a large constant multiplied by the distance crossed in the obstacle.
 
-\textbf{Scenario 0}
+\begin{verbatim}
+const int NUM_PARTICLES = 200;
+const int NUM_WAYPOINTS = 5;
+const int NUM_ITERATIONS = 30000;
+const int RESTART_INTERVAL = 2500;
+double initial_temperature = 100.0;
+double cooling_rate = 0.999;
+int stagnation_threshold = 15;
+\end{verbatim}
 
-\textbf{Scenario 1}
+\medskip
 
-\textbf{Scenario 2}
 
-\textbf{Scenario 3}
+\begin{table}[ht]
+\centering
+\caption{Performance Comparison across All Test Scenarios and Methods}
+\label{tab:all_results}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}l|rr|rr|rr|rr|rr@{}}
+\toprule
+\multirow{2}{*}{\textbf{Scenario}} & \multicolumn{2}{c|}{\textbf{Basic PSO}} & \multicolumn{2}{c|}{\textbf{Random Restart}} & \multicolumn{2}{c|}{\textbf{Annealing PSO}} & \multicolumn{2}{c|}{\textbf{Dim. Learning}} & \multicolumn{2}{c}{\textbf{DL + Refined Fitness}} \\
+& \textbf{Cost} & \textbf{Time (s)} & \textbf{Cost} & \textbf{Time (s)} & \textbf{Cost} & \textbf{Time (s)} & \textbf{Cost} & \textbf{Time (s)} & \textbf{Cost} & \textbf{Time (s)} \\
+\midrule
+0 & 1443.33 & 22.72 & 1443.33 & 10.65 & 1443.33 & 7.82 & 1443.33 & 5.00 & 1443.33 & 1.29 \\
+1 & 1449.06 & 31.06 & 1449.06 & 15.17 & 1449.06 & 10.70 & 1449.06 & 7.38 & 1449.12 & 1.45 \\
+2 & 1522.56 & 37.66 & 1505.19 & 18.20 & 1505.19 & 12.99 & 1505.65 & 7.32 & 1505.19 & 1.91 \\
+3 & 1524.98 & 34.25 & 1522.54 & 16.23 & 1522.90 & 10.43 & 1522.52 & 6.36 & 1522.86 & 2.23 \\
+4 & 1961.92 & 35.89 & 1946.06 & 16.81 & 1948.74 & 10.55 & 1946.45 & 6.33 & 1941.36 & 2.30 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
 
-\textbf{Scenario 4}
+As we can see in Table~\ref{tab:all_results}, adding the different improvements to the basic PSO algorithm allows us to significantly reduce the cost of the solution and the time needed to find it.
 
 \medskip
 

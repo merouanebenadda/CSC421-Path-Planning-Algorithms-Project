@@ -12,26 +12,25 @@ using namespace std;
 
 /// Hyperparameters for PSO
 
-// Base algorithm parameters
-const int NUM_PARTICLES = 400;
+const int NUM_PARTICLES = 500;
 const int NUM_WAYPOINTS = 5;
-const int NUM_ITERATIONS = 5000;
+const int NUM_ITERATIONS = 30000;
 const double C1 = 2.0; // cognitive coefficient
 const double C2 = 2.0; // social coefficient
 const double W = 0.75;  // inertia weight
 
 // Random restart parameters
-const int RESTART_INTERVAL = 1000; // Number of iterations after which to perform a random restart
+const int RESTART_INTERVAL = 5000; // Number of iterations after which to perform a random restart
 
 // Annealing parameters
 double initial_temperature = 100.0; // The larger, the more likely to accept worse solutions at the start
 double cooling_rate = 0.99; // Between 0 and 1
 
 // Dimensional learning parameters
-int stagnation_threshold = 100; // Number of iterations without improvement before applying dimensional learning
+int stagnation_threshold = 15; // Number of iterations without improvement before applying dimensional learning
 
 // Fitness function choice
-std::function<double(const std::vector<Point>&, const Problem&)> fitness_function = fitness_refined;
+std::function<double(const std::vector<Point>&, const Problem&)> fitness_function = fitness;
 
 /*
 @brief saves the given path to a file and optionally visualizes it using a Python script if --plot flag is provided.
@@ -394,6 +393,7 @@ int test_rrt(int argc, char* argv[]){
 
 
 int main(int argc, char* argv[]) {
-    // return test_all();
+    //return test_all();
+    //return test_dimensional_learning_pso(argc, argv);
     return test_rrt(argc, argv);
 }
