@@ -41,8 +41,8 @@ const int RRT_MAX_ITERATIONS = 10000; // Maximum number of iterations to build t
 
 // Intelligent sampling parameters
 const bool INTELLIGENT_SAMPLING = true; // Whether to use intelligent sampling  
-const double P_VERTEX_OBSTACLE = 0.5; // Probability of sampling from obstacle vertices
-const double P_EDGE_OBSTACLE = 0.1; // Probability of sampling from points
+const double P_VERTEX_OBSTACLE = 0.4; // Probability of sampling from obstacle vertices
+const double P_EDGE_OBSTACLE = 0.3; // Probability of sampling from points
 const int NUM_POINTS_NEAR_OBSTACLES = 1000; // Number of points to sample near obstacles for intelligent sampling
 
 /*
@@ -373,7 +373,7 @@ int test_rrt_optimized(int argc, char* argv[]){
     cout << "\nCPU time for building RRT: " << cpu_time_build << " seconds" << endl;
     cout << "\nCPU time for optimization: " << cpu_time_optimize << " seconds" << endl;
     cout << "Iterations: " << iterations << endl;
-    
+
     visualize(argc, argv, optimized_path, &rrt.tree);
     return 0;
 }

@@ -273,13 +273,137 @@ The metrics for PSO are taken from the DL + Refined fitness version.
 
 \textbf{Question 21.}
 
+We change BuildRRT (Algorithm \ref{alg:rrt}) to use intelligent sampling as shown in \ref{alg:rrt_intelligent}.
+
+To do so, we use Algorithm \ref{alg:intelligent_sample} to sample points next to a vertex, near an obstacle, or uniformly random depending on probability parameters $p_v$ and $p_e$.
+
+The sampled points are chosen among pre-computed vectors of satisfying points. They are made with Algorithms \ref{verticesObstacles} and \ref{PointsNearObstacles}.
+
+\begin{algorithm}[!h]
+    \DontPrintSemicolon
+    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+    \Input{Problem $P$, step size $\delta_s$, radius $\delta_r$, max iterations $I$, \\
+           bool $use\_intelligent\_sampling$, probabilities $p_{vertex}$, $p_{edge}$, \\
+           number of edge samples $n_{edge}$}
+    \Output{Number of iterations taken to build tree}
+    \BlankLine
+    
+    \tcp{Precompute sampling points if using intelligent sampling}
+    \If{$use\_intelligent\_sampling$}{
+        $vertices_{obstacles} \leftarrow P.\textsc{VerticesObstacles}()$\;
+        $points_{near\_obstacles} \leftarrow P.\textsc{PointsNearObstacles}(n_{edge})$\;
+    }
+
+    
+    $iterations \leftarrow 0$\;
+    \While{$iterations < I$}{
+
+        \tcp{Sample point according to strategy}
+        \eIf{$use\_intelligent\_sampling$}{
+            $v_r \leftarrow \textsc{RandomSample\_Intelligent}(P, vertices_{obstacles}, p_{vertex}, points_{near\_obstacles}, p_{edge})$
+        }{
+            $v_r \leftarrow \textsc{RandomSample\_Naive}(P)$\;
+        }
+        
+        \tcp{... rest of BuildRRT algorithm unchanged (see Algorithm \ref{alg:rrt})}
+        \tcp{Find nearest, steer, choose parent, rewire, check goal...}
+        \BlankLine
+        
+        $iterations \leftarrow iterations + 1$\;
+    }
+    
+    \Return{$iterations$}
+    \caption{BuildRRT - with Intelligent Sampling Option}\label{alg:rrt_intelligent}
+\end{algorithm}
+
+\begin{algorithm}[!h]
+    \DontPrintSemicolon
+    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+    \SetKwProg{Fn}{Function}{:}{}
+    
+    \Fn{\textsc{RandomSample\_Intelligent}$(P, V_{obs}, p_v, E_{obs}, p_e)$}{
+        \Input{Problem $P$, obstacle vertices $V_{obs}$, probability $p_v$, edge points $E_{obs}$, probability $p_e$}
+        \Output{Sampled point}
+        $r \leftarrow$ random$(0, 1)$\;
+        \eIf{$r < p_v$ \textbf{and} $V_{obs} \neq \emptyset$}{
+            \Return{random element from $V_{obs}$}\tcp*{Near vertex}
+        }{
+            \eIf{$r < p_v + p_e$ \textbf{and} $E_{obs} \neq \emptyset$}{
+                \Return{random element from $E_{obs}$}\tcp*{Near edge}
+            }{
+                \Return{\textsc{RandomSample\_Naive}$(P)$}\tcp*{Uniform}
+            }
+        }
+    }
+    \caption{RandomSample\_Intelligent - Strategic Sampling}\label{alg:intelligent_sample}
+\end{algorithm}
+
+\begin{algorithm}[!h]
+    \DontPrintSemicolon
+    \footnotesize
+    \SetKwProg{Fn}{Function}{:}{}
+    \Fn{\textsc{VerticesObstacles}$(obstacles, x_{max}, y_{max})$}{
+        \Input{List of obstacles, environment bounds}
+        \Output{Vertices slightly outside obstacles}
+        $V \leftarrow \emptyset$\;
+        \ForEach{obstacle $obs$ in $obstacles$}{
+            $corners \leftarrow$ 4 corner points of $obs$\;
+            \For{$i \gets 0$ \KwTo $3$}{
+                \If{$corners[i]$ not on environment boundary}{
+                    $p \leftarrow$ shift $corners[i]$ slightly outward\tcp*{$\epsilon = 10^{-4}$}
+                    Append $p$ to $V$\;
+                }
+            }
+        }
+        \Return{$V$}
+    }
+    \caption{VerticesObstacles - Extract Obstacle Vertices}
+    \label{verticesObstacles}
+\end{algorithm}
+
+\begin{algorithm}[!h]
+    \DontPrintSemicolon
+    \footnotesize
+    \SetKwProg{Fn}{Function}{:}{}
+    \Fn{\textsc{PointsNearObstacles}$(obstacles, N, x_{max}, y_{max})$}{
+        \Input{Obstacles, target count $N$, environment bounds}
+        \Output{Points distributed along obstacle edges}
+        $E \leftarrow \emptyset$\;
+        $P_{total} \leftarrow \sum_{obs} 2(obs.l_x + obs.l_y)$\tcp*{Total perimeter}
+        \ForEach{obstacle $obs$ in $obstacles$}{
+            $P_{obs} \leftarrow 2(obs.l_x + obs.l_y)$\;
+            $n \leftarrow \lfloor N \cdot (P_{obs} / P_{total}) \rfloor$\tcp*{Points proportional to perimeter}
+            \For{$i \gets 0$ \KwTo $n-1$}{
+                $t \leftarrow i / n$\;
+                $p \leftarrow$ point at position $t$ along perimeter of $obs$, shifted slightly outward\;
+                \If{$p$ valid (not on boundary, not inside obstacles)}{
+                    Append $p$ to $E$\;
+                }
+            }
+        }
+        \Return{$E$}
+    }
+    \caption{PointsNearObstacles - Sample Obstacle Edges}
+    \label{PointsNearObstacles}
+\end{algorithm}
+
 \medskip
 
 \textbf{Question 22.}
 
+See the implementation in files \texttt{src/RRT.cpp}, \texttt{src/Problem.cpp} and \texttt{src/utils.cpp}.
+
+This approach leads to introducing three new hyperparameters. 
+The number of samples to create near the obstacles was fixed based on previous experiments, so that we have enough points to try over all the iteration but we do not compute too many uselessly. Thus we chose \texttt{num_points_near_obstacles = 1000}. 
+The probabilities $\texttt{p\_v}$ and $\texttt{p\_e}$ were chosen to efficiently target corners, which are key points for efficient paths. However, setting $\texttt{p\_v}$ too high is not relevant, as this would create too much branches of the tree directed towards uninteresting corners. That is why we chose $\texttt{p\_v = 0.4}$. It is the same idea for edge sampling : if the probability is too low, we do not focus enough on edges. If it is too high, we overfocus on some edges, even though they are irrelevant for our problem. That is why we chose $\texttt{p\_e = 0.3}$, so that we have a fairly exhaustive exploration of edges without trying every precomputed point.
+
 \medskip
 
 \textbf{Question 23.}
+
+When considering both methods developed previously, RRT seems to the most appropriate when there are two robots. Indeed, it appears to be the most efficient, and it is editable quite easily to consider a second robot.
+
+The idea is to find a path for the first robot, and then to build a new tree following RRT rules with a new constraint : the new tree should not cut the path of the first robot. To prevent the first robot to take a path too close from obstacles, which would impede the second robot to find his way to the goal point, the problem data given to the first robot is quite different : all obstacles are enlarged of $3R$ in each direction, so that there remains enough space for the second robot to go between the first one's path and the real obstacle.
 
 \medskip
 
