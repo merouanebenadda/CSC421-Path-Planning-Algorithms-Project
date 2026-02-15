@@ -408,10 +408,54 @@ int test_rrt(int argc, char* argv[]){
     return 0;
 }
 
+int test_rrt_optimized(int argc, char* argv[]){
+    srand(time(0)); // Seed the random number generator
+
+    if (argc < 2 || argc > 3) {
+        cerr << "Usage: " << argv[0] << " <scenario_file> [--plot]" << endl;
+        return 1;
+    }
+
+    // Load problem scenario
+    Problem problem;
+    if (!problem.loadScenario(argv[1])) {
+        cerr << "Failed to load scenario from file: " << argv[1] << endl;
+        return 1;
+    }
+
+    // RRT optimization
+    RRT rrt(problem); 
+    auto [initial_path, iterations, initial_cost] = rrt.rrtPath(problem, RRT_DELTA_S, RRT_DELTA_R, RRT_MAX_ITERATIONS);
+    
+    clock_t start_time = clock();
+    auto [optimized_path, optimized_cost] = rrt.optimizePath(problem, initial_path);
+    clock_t end_time = clock();
+    double cpu_time = double(end_time - start_time) / CLOCKS_PER_SEC;
+
+    // Output results
+    cout << "Initial path found:" << endl;
+    for (const auto& point : initial_path) {
+        cout << "(" << point.x << ", " << point.y << ")" << endl;
+    }
+    cout << "Initial path cost: " << initial_cost << endl;
+
+    cout << "\nOptimized path:" << endl;
+    for (const auto& point : optimized_path) {
+        cout << "(" << point.x << ", " << point.y << ")" << endl;
+    }
+    cout << "Optimized path cost: " << optimized_cost << endl;
+
+    cout << "\nCPU time for optimization: " << cpu_time << " seconds" << endl;
+
+    visualize(argc, argv, optimized_path, &rrt.tree);
+    return 0;
+}
+
 
 
 int main(int argc, char* argv[]) {
     //return test_all();
     //return test_dimensional_learning_pso(argc, argv);
-    return test_rrt(argc, argv);
+    //return test_rrt(argc, argv);
+    return test_rrt_optimized(argc, argv);
 }

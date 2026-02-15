@@ -379,14 +379,18 @@ Here are the results for $\delta_s = 100$ and $\delta_r = 100$:
 \end{tabular}%
 \end{table}
 
-
-\medskip
-
-\textbf{Question 18.}
-
 \medskip
 
 \textbf{Question 19.}
+
+The path built are made of segments of length at most $\delta_s$. However, there is sometimes a free space longer than $\delta_s$ to cross, which is made by assembling multiple segments. As these segments do not have the same direction, the path is not optimal, according to the triangle inequality.
+Indeed, it is more efficient to supress intermediate nodes in the path, if the lines created do not cross any obstacle.
+
+To do so, we keep the same path building method, but we improve the returned path by supressing intermediate nodes.
+
+See the implementation in the method \texttt{optimizePath}, in file \texttt{src/RRT.cpp}.
+
+Thus the complexity of the algorithm remains the same, as the optimization step is done in $O(I)$ time, where $I$ is the number of iterations needed to build the tree, which is negligible compared to the complexity of building the tree.
 
 \medskip
 

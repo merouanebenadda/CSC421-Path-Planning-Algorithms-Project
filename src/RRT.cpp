@@ -117,3 +117,22 @@ std::tuple<std::vector<Point>, int, double> RRT::rrtPath(const Problem& problem,
 
 }
 
+std::tuple<std::vector<Point>, double> RRT::optimizePath(const Problem& problem, std::vector<Point> path){
+    // Optimize the path by removing unnecessary intermediate nodes
+    std::vector<Point> optimized_path;
+    optimized_path.push_back(problem.start1); // Start point
+
+    for (size_t i = 1; i < path.size(); i++) {
+        if (i == path.size() - 1 || problem.isCollision(optimized_path.back(), path[i + 1])) {
+            optimized_path.push_back(path[i]); // Add the last point or the point before a collision
+        }
+    }
+
+    double optimized_cost = 0.0;
+    for (size_t i = 0; i < optimized_path.size() - 1; i++) {
+        optimized_cost += euclideanDistance(optimized_path[i], optimized_path[i + 1]);
+    }
+
+    return std::make_tuple(optimized_path, optimized_cost);
+}
+
