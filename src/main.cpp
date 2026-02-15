@@ -460,11 +460,52 @@ int test_rrt_optimized(int argc, char* argv[]){
     return 0;
 }
 
+int test_rrt_2_robots(int argc, char* argv[]){
+    srand(time(0)); // Seed the random number generator
+
+    if (argc < 2 || argc > 3) {
+        cerr << "Usage: " << argv[0] << " <scenario_file> [--plot]" << endl;
+        return 1;
+    }
+
+    // Load problem scenario
+    Problem problem;
+    if (!problem.loadScenario(argv[1])) {
+        cerr << "Failed to load scenario from file: " << argv[1] << endl;
+        return 1;
+    }
+
+    // RRT for two robots
+    RRT rrt(problem); 
+    clock_t start_time = clock();
+    auto [path_robot1, path_robot2] = rrt.rrtPath2Robots(problem, RRT_DELTA_S, RRT_DELTA_R, RRT_MAX_ITERATIONS, INTELLIGENT_SAMPLING, P_VERTEX_OBSTACLE, P_EDGE_OBSTACLE, NUM_POINTS_NEAR_OBSTACLES);
+    clock_t end_time = clock();
+    double cpu_time = double(end_time - start_time) / CLOCKS_PER_SEC;
+
+    // Output results
+    cout << "Path for Robot 1:" << endl;
+    for (const auto& point : path_robot1) {
+        cout << "(" << point.x << ", " << point.y << ")" << endl;
+    }
+
+    cout << "\nPath for Robot 2:" << endl;
+    for (const auto& point : path_robot2) {
+        cout << "(" << point.x << ", " << point.y << ")" << endl;
+    }
+
+    cout << "\nCPU time: " << cpu_time << " seconds" << endl;
+
+    visualize(argc, argv, path_robot1, &rrt.tree); // Visualize the path of the first robot
+    visualize(argc, argv, path_robot2, &rrt.tree2); // Visualize the path of the second robot
+    return 0;
+}
+
 
 
 int main(int argc, char* argv[]) {
     //return test_all();
     //return test_dimensional_learning_pso(argc, argv);
     //return test_rrt(argc, argv);
-    return test_rrt_optimized(argc, argv);
+    //return test_rrt_optimized(argc, argv);
+    return test_rrt_2_robots(argc, argv);
 }

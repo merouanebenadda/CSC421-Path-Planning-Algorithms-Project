@@ -28,5 +28,6 @@ public:
     double collisionDistance(const std::vector<Point>& path) const; // calculates the distance travelled into obstacles for a given path
     std::vector<Point> verticesObstacles() const; // returns a vector of all the vertices of the obstacles that are not on the boundary of the environment
     std::vector<Point> pointsNearObstacles(double N) const; // returns a vector of points near obstacles. N is the approximate number of desired points.
+    
 };
 

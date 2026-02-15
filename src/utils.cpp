@@ -150,3 +150,12 @@ bool pointOnBoundary(const Point& p, double x_max, double y_max) {
     return (std::abs(p.x) <= 1e-12 * x_max || std::abs(p.x - x_max) <= 1e-12 * x_max ||
             std::abs(p.y) <= 1e-12 * y_max || std::abs(p.y - y_max) <= 1e-12 * y_max);
 }
+
+bool segmentIntersectsPath(const Point& p1, const Point& p2, const std::vector<Point>& path) {
+    for (size_t i = 0; i < path.size() - 1; ++i) {
+        if (segmentsIntersect(p1, p2, path[i], path[i + 1])) {
+            return true;
+        }
+    }
+    return false;
+}
