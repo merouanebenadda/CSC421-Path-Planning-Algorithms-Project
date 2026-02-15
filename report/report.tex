@@ -404,9 +404,53 @@ The probabilities $\texttt{p\_v}$ and $\texttt{p\_e}$ were chosen to efficiently
 When considering both methods developed previously, RRT seems to the most appropriate when there are two robots. Indeed, it appears to be the most efficient, and it is editable quite easily to consider a second robot.
 
 The idea is to find a path for the first robot, and then to build a new tree following RRT rules with a new constraint : the new tree should not cut the path of the first robot at a time when it could. To do so, and in order to avoid delay changes due to rewiring, this second tree will be build without rewiring. If the new tree crosses the path, we will check that the distance from the root is not distant from the one one the path from less than $2R$, so that robots won't collide.
+
+To do so, we changed every method to take into account if the robot is the first or the second robot.
+
+\begin{algorithm}[!h]
+    \DontPrintSemicodon
+    \footnotesize
+    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+    \Input{Problem $P$, $\delta_s$, $\delta_r$, $I$, intelligent params, $is\_second\_robot$, $path_{robot1}$}
+    \Output{Iterations count}
+    $tree_{cur} \leftarrow is\_second\_robot$ ? $tree_2$ : $tree_1$\;
+    \If{intelligent sampling}{ Precompute $V_{obs}$ and $E_{obs}$\;}
+    $iterations \leftarrow 0$\;
+    \While{$iterations < I$}{
+        $v_r \leftarrow$ sample point (intelligent or naive)\;
+        \If{$v_r$ in obstacle}{\textbf{continue}\;}
+        $v_n \leftarrow$ nearest vertex in $tree_{cur}$ to $v_r$\;
+        $v \leftarrow$ steer from $v_n$ toward $v_r$ at max distance $\delta_s$\;
+        \tcp{Choose best parent with collision checks}
+        $parent \leftarrow -1$\;
+        \If{no collision($v_n$, $v$) \textbf{and not} edge collision with $path_{robot1}$}{
+            $parent \leftarrow v_n$\;
+        }
+        \ForEach{$v_i$ in $tree_{cur}$ within radius $\delta_r$ of $v$}{
+            \If{no collision($v_i$, $v$) \textbf{and not} edge collision with $path_{robot1}$}{
+                \If{$parent = -1$ \textbf{or} cost via $v_i$ is better}{
+                    $parent \leftarrow v_i$\;
+                }
+            }
+        }
+        \If{$parent = -1$}{\textbf{continue}\;}
+        \textsc{AddVertex}$(tree_{cur}, v, parent)$; $idx_v \leftarrow |tree_{cur}| - 1$\;
+        \If{\textbf{not} $is\_second\_robot$}{
+            Rewire neighbors of $v$ in $tree_{cur}$\tcp*{Only for robot 1}
+        }
+        \If{goal reachable from $v$}{
+            \textsc{AddVertex}$(tree_{cur}, goal, idx_v)$; \textbf{break}\;
+        }
+        $iterations \leftarrow iterations + 1$\;
+    }
+    \Return{$iterations$}
+    \caption{BuildRRT - Multi-Robot Path Planning}\label{alg:rrt_2robots}
+\end{algorithm}
 \medskip
 
 \textbf{Question 24.}
+
+
 
 \medskip
 
