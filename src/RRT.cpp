@@ -20,19 +20,33 @@ RRT::RRT(const Problem& problem) : tree(problem.start1), tree2(problem.start2) {
     // The constructor initializes the tree with the start point
 }
 
-void RRT::addVertex(const Point& vertex, int parent_index) {
-    tree.vertices.push_back(vertex);
-    tree.parents.push_back(parent_index);
-    tree.costs.push_back(tree.costs[parent_index] + euclideanDistance(tree.vertices[parent_index], vertex));
+void RRT::addVertex(const Point& vertex, int parent_index, bool is_second_robot) {
+    if(is_second_robot) {
+        tree2.vertices.push_back(vertex);
+        tree2.parents.push_back(parent_index);
+        tree2.costs.push_back(tree2.costs[parent_index] + euclideanDistance(tree2.vertices[parent_index], vertex));
+    } else {
+        tree.vertices.push_back(vertex);
+        tree.parents.push_back(parent_index);
+        tree.costs.push_back(tree.costs[parent_index] + euclideanDistance(tree.vertices[parent_index], vertex));
+    }
 }
 
-std::vector<Point> RRT::reconstructPath(int vertex_index) const {
+std::vector<Point> RRT::reconstructPath(int vertex_index, bool is_second_robot) const {
     // Reconstruct the path (first and last points excluded) from the root to the given vertex index
     std::vector<Point> path;
-    vertex_index = tree.parents[vertex_index]; // Start from the parent of the goal vertex
-    while (tree.parents[vertex_index] != -1) {
-        path.push_back(tree.vertices[vertex_index]);
-        vertex_index = tree.parents[vertex_index];
+    if(is_second_robot) {
+        vertex_index = tree2.parents[vertex_index]; // Start from the parent of the goal vertex
+        while (tree2.parents[vertex_index] != -1) {
+            path.push_back(tree2.vertices[vertex_index]);
+            vertex_index = tree2.parents[vertex_index];
+        }
+    } else {
+        vertex_index = tree.parents[vertex_index]; // Start from the parent of the goal vertex
+        while (tree.parents[vertex_index] != -1) {
+            path.push_back(tree.vertices[vertex_index]);
+            vertex_index = tree.parents[vertex_index];
+        }
     }
     std::reverse(path.begin(), path.end()); // Reverse the path to get it from start to goal
     return path;
@@ -55,6 +69,22 @@ Point RRT::randomSample_intelligent(const Problem& problem, std::vector<Point> v
     } else {
         return randomSample_naive(problem); // Sample uniformly from the environment
     }
+}
+
+bool RRT::edgeCollisionPath(const Problem& problem, const Point& p1, const double cost1, const Point& p2, const std::vector<Point>& path) const {
+    // Check if the edge between p1 and p2 intersects with any segment of the path
+    double cost_path = 0.0;
+    for (size_t i = 0; i < path.size() - 1; ++i) {
+        if (segmentsIntersect(p1, p2, path[i], path[i + 1])) {
+            Point intersection_point;
+            getIntersectionPoint(p1, p2, path[i], path[i + 1], intersection_point);
+            if (std::abs(euclideanDistance(p1, intersection_point) + cost1 - (euclideanDistance(path[i],intersection_point) + cost_path)) < 2*problem.radius) {
+                return true; // Collision detected
+            }
+        }
+        cost_path += euclideanDistance(path[i], path[i+1]);
+    }
+    return false; // No collision
 }
 
 int RRT::buildRRT(const Problem& problem, double delta_s, double delta_r, int max_iterations, bool use_intelligent_sampling, double p_vertex_obstacle, double p_edge_obstacle, int num_points_near_obstacles, bool is_second_robot, std::vector<Point> path_first_robot) {
@@ -92,7 +122,7 @@ int RRT::buildRRT(const Problem& problem, double delta_s, double delta_r, int ma
         Point vn = tree_cur.vertices[vn_index];
         Point v;
         double dist = euclideanDistance(vn, vr);
-        if (dist <= delta_s && !(is_second_robot && segmentIntersectsPath(vn, vr, path_first_robot))) {
+        if (dist <= delta_s) {
             v = vr;
         } else {
             double theta = atan2(vr.y - vn.y, vr.x - vn.x);
@@ -100,13 +130,13 @@ int RRT::buildRRT(const Problem& problem, double delta_s, double delta_r, int ma
         }
         // Choose the parent of v
         int parent_index = -1;
-        if (!problem.isCollision(vn, v) && !(is_second_robot && segmentIntersectsPath(vn, v, path_first_robot))) {
+        if (!problem.isCollision(vn, v) && !(is_second_robot && edgeCollisionPath(problem, vn, tree_cur.costs[vn_index], vr, path_first_robot))) {
             parent_index = vn_index;
         }
         for (size_t i = 0; i < tree_cur.vertices.size(); i++) {
             if (euclideanDistance(tree_cur.vertices[i], v) < delta_r 
                 && !problem.isCollision(tree_cur.vertices[i], v)
-                && !(is_second_robot && segmentIntersectsPath(tree_cur.vertices[i], v, path_first_robot))
+                && !(is_second_robot && edgeCollisionPath(problem, tree_cur.vertices[i], tree_cur.costs[i], v, path_first_robot))
                 && (parent_index == -1 
                     || tree_cur.costs[i] + euclideanDistance(tree_cur.vertices[i], v) < tree_cur.costs[parent_index] + euclideanDistance(tree_cur.vertices[parent_index], v))) {
                 parent_index = i;
@@ -120,12 +150,14 @@ int RRT::buildRRT(const Problem& problem, double delta_s, double delta_r, int ma
         int index_v = tree_cur.vertices.size() - 1;
     
         // Update neighors' parent if it improves their cost
-        for (size_t i = 0; i < tree_cur.vertices.size(); i++) {
-            if (euclideanDistance(tree_cur.vertices[i], v) < delta_r 
-                && !problem.isCollision(tree_cur.vertices[i], v)
-                && tree_cur.costs[i] > tree_cur.costs[index_v] + euclideanDistance(tree_cur.vertices[index_v], tree_cur.vertices[i])) {
-                tree_cur.parents[i] = index_v; // Update parent to the new vertex
-                tree_cur.costs[i] = tree_cur.costs[index_v] + euclideanDistance(tree_cur.vertices[index_v], tree_cur.vertices[i]);
+        if(!is_second_robot){
+            for (size_t i = 0; i < tree_cur.vertices.size(); i++) {
+                if (euclideanDistance(tree_cur.vertices[i], v) < delta_r 
+                    && !problem.isCollision(tree_cur.vertices[i], v)
+                    && tree_cur.costs[i] > tree_cur.costs[index_v] + euclideanDistance(tree_cur.vertices[index_v], tree_cur.vertices[i])) {
+                    tree_cur.parents[i] = index_v; // Update parent to the new vertex
+                    tree_cur.costs[i] = tree_cur.costs[index_v] + euclideanDistance(tree_cur.vertices[index_v], tree_cur.vertices[i]);
+                }
             }
         }
 
@@ -143,10 +175,14 @@ int RRT::buildRRT(const Problem& problem, double delta_s, double delta_r, int ma
 }
 
 std::tuple<std::vector<Point>, int, double> RRT::rrtPath(const Problem& problem, double delta_s, double delta_r, int max_iterations, bool use_intelligent_sampling, double p_vertex_obstacle, double p_edge_obstacle, int num_points_near_obstacles, bool is_second_robot, std::vector<Point> path_first_robot) {
-    int iterations =buildRRT(problem, delta_s, delta_r, max_iterations, use_intelligent_sampling, p_vertex_obstacle, p_edge_obstacle, num_points_near_obstacles, is_second_robot, path_first_robot); 
+    int iterations = buildRRT(problem, delta_s, delta_r, max_iterations, use_intelligent_sampling, p_vertex_obstacle, p_edge_obstacle, num_points_near_obstacles, is_second_robot, path_first_robot); 
     double path_cost = tree.costs.back(); // Cost of the path to the goal (last vertex added)
-    return std::make_tuple(reconstructPath(tree.vertices.size() - 1), iterations, path_cost); // The goal point is the last vertex added to the tree
-
+    if(is_second_robot) {
+        path_cost = tree2.costs.back();
+        return std::make_tuple(reconstructPath(tree2.vertices.size() - 1, true), iterations, path_cost); // The goal point is the last vertex added to the tree
+    }else {
+        return std::make_tuple(reconstructPath(tree.vertices.size() - 1, false), iterations, path_cost); // The goal point is the last vertex added to the tree
+    }
 }
 
 std::tuple<std::vector<Point>, double> RRT::optimizePath(const Problem& problem, std::vector<Point> path){
@@ -170,18 +206,8 @@ std::tuple<std::vector<Point>, double> RRT::optimizePath(const Problem& problem,
 
 std::tuple<std::vector<Point>, std::vector<Point>> RRT::rrtPath2Robots(const Problem& problem, double delta_s, double delta_r, int max_iterations, bool use_intelligent_sampling, double p_vertex_obstacle, double p_edge_obstacle, int num_points_near_obstacles) {
     // Build the RRT for the first robot and get its path
-    Problem problem_robot1 = problem;
-    for (auto& obs : problem_robot1.obstacles) {
-        obs.ll_corner.x -= 3 * problem.radius;
-        obs.ll_corner.y -= 3 * problem.radius;
-        obs.lx += 6 * problem.radius;
-        obs.ly += 6 * problem.radius;
-    }
-
-    auto [path_1, iterations_1, cost_1] = rrtPath(problem_robot1, delta_s, delta_r, max_iterations, use_intelligent_sampling, p_vertex_obstacle, p_edge_obstacle, num_points_near_obstacles);
-
+    auto [path_1, iterations_1, cost_1] = rrtPath(problem, delta_s, delta_r, max_iterations, use_intelligent_sampling, p_vertex_obstacle, p_edge_obstacle, num_points_near_obstacles);
     // Build the RRT for the second robot with the path of the first robot as additional obstacles
     auto [path_2, iterations_2, cost_2] = rrtPath(problem, delta_s, delta_r, max_iterations, use_intelligent_sampling, p_vertex_obstacle, p_edge_obstacle, num_points_near_obstacles, true, path_1); 
-
     return std::make_tuple(path_1, path_2);
 }

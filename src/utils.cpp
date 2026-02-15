@@ -151,11 +151,29 @@ bool pointOnBoundary(const Point& p, double x_max, double y_max) {
             std::abs(p.y) <= 1e-12 * y_max || std::abs(p.y - y_max) <= 1e-12 * y_max);
 }
 
-bool segmentIntersectsPath(const Point& p1, const Point& p2, const std::vector<Point>& path) {
+void getIntersectionPoint(const Point& p1, const Point& p2, const Point& p3, const Point& p4, Point& intersection_point) {
+    double A1 = p2.y - p1.y;
+    double B1 = p1.x - p2.x;
+    double C1 = A1 * p1.x + B1 * p1.y;
+
+    double A2 = p4.y - p3.y;
+    double B2 = p3.x - p4.x;
+    double C2 = A2 * p3.x + B2 * p3.y;
+
+    double det = A1 * B2 - A2 * B1;
+
+    intersection_point.x = (B2 * C1 - B1 * C2) / det;
+    intersection_point.y = (A1 * C2 - A2 * C1) / det;
+}
+
+std::tuple<bool, Point> segmentPathIntersection(const Point& p1, const Point& p2, const std::vector<Point>& path) {
     for (size_t i = 0; i < path.size() - 1; ++i) {
         if (segmentsIntersect(p1, p2, path[i], path[i + 1])) {
-            return true;
+            Point intersection_point;
+            getIntersectionPoint(p1, p2, path[i], path[i + 1], intersection_point);
+            return std::make_tuple(true, intersection_point);
         }
     }
-    return false;
+    return std::make_tuple(false, Point(0, 0));
 }
+
