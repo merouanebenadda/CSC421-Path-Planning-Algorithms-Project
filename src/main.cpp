@@ -425,12 +425,14 @@ int test_rrt_optimized(int argc, char* argv[]){
 
     // RRT optimization
     RRT rrt(problem); 
+    clock_t start_time = clock();
     auto [initial_path, iterations, initial_cost] = rrt.rrtPath(problem, RRT_DELTA_S, RRT_DELTA_R, RRT_MAX_ITERATIONS);
     
-    clock_t start_time = clock();
+    clock_t end_build_time = clock();
     auto [optimized_path, optimized_cost] = rrt.optimizePath(problem, initial_path);
-    clock_t end_time = clock();
-    double cpu_time = double(end_time - start_time) / CLOCKS_PER_SEC;
+    clock_t end_optimize_time = clock();
+    double cpu_time_build = double(end_build_time - start_time) / CLOCKS_PER_SEC;
+    double cpu_time_optimize = double(end_optimize_time - end_build_time) / CLOCKS_PER_SEC;
 
     // Output results
     cout << "Initial path found:" << endl;
@@ -445,7 +447,8 @@ int test_rrt_optimized(int argc, char* argv[]){
     }
     cout << "Optimized path cost: " << optimized_cost << endl;
 
-    cout << "\nCPU time for optimization: " << cpu_time << " seconds" << endl;
+    cout << "\nCPU time for building RRT: " << cpu_time_build << " seconds" << endl;
+    cout << "\nCPU time for optimization: " << cpu_time_optimize << " seconds" << endl;
 
     visualize(argc, argv, optimized_path, &rrt.tree);
     return 0;

@@ -390,11 +390,34 @@ To do so, we keep the same path building method, but we improve the returned pat
 
 See the implementation in the method \texttt{optimizePath}, in file \texttt{src/RRT.cpp}.
 
-Thus the complexity of the algorithm remains the same, as the optimization step is done in $O(I)$ time, where $I$ is the number of iterations needed to build the tree, which is negligible compared to the complexity of building the tree.
-
+Thus the complexity of the algorithm remains the same, as the optimization step is done in $O(I)$ time, where $I$ is the number of iterations needed to build the tree, which is negligible compared to the complexity of building the tree. This is confirmed by the results, the computation time of optimization is equal to 0s in all scenarios.
 \medskip
 
 \textbf{Question 20.}
+
+Results are shown in Table~\ref{tab:rrt_optimized_results}. For the RRT, as the path optimization complexity is negligible compared to the tree building, results shown come from the same tree building.
+Moreover, this allows to compare the path length before and after optimization on one single tree, making the comparison more relevant.
+The metrics for PSO are taken from the DL + Refined fitness version.
+
+\begin{table}[ht]
+\centering
+\caption{Performance comparison between PSO and RRT (without and with optimized path)}
+\label{tab:rrt_optimized_results}
+
+\begin{tabular}{@{}l|ccc|cc@{}}
+\toprule
+\multirow{2}{*}{\textbf{Scenario}} & \multicolumn{3}{c|}{\textbf{Path length}} & \multicolumn{2}{c}{\textbf{CPU time (s)}} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-6}
+& \textbf{PSO} & \textbf{RRT} & \textbf{RRT (optimized path)} & \textbf{PSO} & \textbf{RRT} \\
+\midrule
+0 & 1443.33 & 1785,36 & 1437,43 & 1.29 & 0 \\
+1 & 1449.12 & 1810,40 & 1433,18 & 1.45 & 0.002 \\
+2 & 1505.19 & 1975,92 & 1525,40 & 1.91 & 0 \\
+3 & 1522.86 & 1643,85 & 1515,43 & 2.23 & 0 \\
+4 & 1941.36 & 2319,06 & 2006,87 & 2.30 & 0.016 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \medskip
 
