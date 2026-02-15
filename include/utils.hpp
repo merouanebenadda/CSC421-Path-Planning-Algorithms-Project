@@ -20,4 +20,5 @@ double segmentCollisionDistance(const Point& p1, const Point& p2, const Obstacle
 double segmentCollisionDistance(const Point& p1, const Point& p2, const std::vector<Obstacle>& obstacles);
 
 bool pointOnBoundary(const Point& p, double x_max, double y_max);
-bool segmentIntersectsPath(const Point& p1, const Point& p2, const std::vector<Point>& path);
+void getIntersectionPoint(const Point& p1, const Point& p2, const Point& p3, const Point& p4, Point& intersection_point);   
+std::tuple<bool, Point> segmentPathIntersection(const Point& p1, const Point& p2, const std::vector<Point>& path);
