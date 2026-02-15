@@ -32,6 +32,14 @@ int stagnation_threshold = 15; // Number of iterations without improvement befor
 // Fitness function choice
 std::function<double(const std::vector<Point>&, const Problem&)> fitness_function = fitness;
 
+
+/// Hyperparameters for RRT
+
+const double RRT_DELTA_S = 100.0; // Step size for extending the tree
+const double RRT_DELTA_R = 100.0; // Radius for checking nearby vertices
+const int RRT_MAX_ITERATIONS = 10000; // Maximum number of iterations to build the RRT
+
+
 /*
 @brief saves the given path to a file and optionally visualizes it using a Python script if --plot flag is provided.
 @param argc the number of command-line arguments
@@ -373,7 +381,7 @@ int test_rrt(int argc, char* argv[]){
     // PSO optimization
     RRT rrt(problem); 
     clock_t start_time = clock();
-    auto best_path = rrt.rrtPath(problem, 50, 100,10000);
+    auto best_path = rrt.rrtPath(problem, RRT_DELTA_S, RRT_DELTA_R, RRT_MAX_ITERATIONS);
     clock_t end_time = clock();
     double cpu_time = double(end_time - start_time) / CLOCKS_PER_SEC;
 
