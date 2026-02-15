@@ -19,9 +19,17 @@ We chose to implement the solution in C++ for the main algorithmic part, as it a
 
 **Question 13** : [include/RRT.hpp](include/RRT.hpp) for the tree data structure. Parent pointer representation is used.
 
+<<<<<<< HEAD
 **Question 14** : [src/RRT.cpp](src/RRT.cpp) and [include/RRT.hpp](include/RRT.hpp) for the path reconstruction method.
 
 **Question 17** : [src/RRT.cpp](src/RRT.cpp) for the RRT implementation.
+=======
+**Question 17** [src/RRT.cpp](src/RRT.cpp) and [include/RRT.hpp](include/RRT.hpp) for the implementation of the intelligent sampling method.
+
+**Question 19** [src/RRT.cpp](src/RRT.cpp) and [include/RRT.hpp](include/RRT.hpp) for the implementation of the RRT algorithm.
+
+**Question 22** [src/RRT.cpp](src/RRT.cpp) and [include/RRT.hpp](include/RRT.hpp) for the implementation of the RRT for two robots, including the method to check for edge collisions with the path of the first robot.
+>>>>>>> 8cb0f84df9d2c2cd26dd8ac9281273dfe6b70a4c
 
 **Question 19** : [src/RRT.cpp](src/RRT.cpp) for the path optimization method (optimizePath).
 

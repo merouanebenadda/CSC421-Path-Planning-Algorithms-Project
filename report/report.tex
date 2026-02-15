@@ -341,6 +341,7 @@ The sampled points are chosen among pre-computed vectors of satisfying points. T
 \begin{algorithm}[!h]
     \DontPrintSemicolon
     \footnotesize
+    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
     \SetKwProg{Fn}{Function}{:}{}
     \Fn{\textsc{VerticesObstacles}$(obstacles, x_{max}, y_{max})$}{
         \Input{List of obstacles, environment bounds}
@@ -364,6 +365,7 @@ The sampled points are chosen among pre-computed vectors of satisfying points. T
 \begin{algorithm}[!h]
     \DontPrintSemicolon
     \footnotesize
+    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
     \SetKwProg{Fn}{Function}{:}{}
     \Fn{\textsc{PointsNearObstacles}$(obstacles, N, x_{max}, y_{max})$}{
         \Input{Obstacles, target count $N$, environment bounds}
@@ -394,8 +396,8 @@ The sampled points are chosen among pre-computed vectors of satisfying points. T
 See the implementation in files \texttt{src/RRT.cpp}, \texttt{src/Problem.cpp} and \texttt{src/utils.cpp}.
 
 This approach leads to introducing three new hyperparameters. 
-The number of samples to create near the obstacles was fixed based on previous experiments, so that we have enough points to try over all the iteration but we do not compute too many uselessly. Thus we chose \texttt{num_points_near_obstacles = 1000}. 
-The probabilities $\texttt{p\_v}$ and $\texttt{p\_e}$ were chosen to efficiently target corners, which are key points for efficient paths. However, setting $\texttt{p\_v}$ too high is not relevant, as this would create too much branches of the tree directed towards uninteresting corners. That is why we chose $\texttt{p\_v = 0.4}$. It is the same idea for edge sampling : if the probability is too low, we do not focus enough on edges. If it is too high, we overfocus on some edges, even though they are irrelevant for our problem. That is why we chose $\texttt{p\_e = 0.3}$, so that we have a fairly exhaustive exploration of edges without trying every precomputed point.
+The number of samples to create near the obstacles was fixed based on previous experiments, so that we have enough points to try over all the iteration but we do not compute too many uselessly. Thus we chose \texttt{num\_points\_near\_obstacles = 1000}. 
+The probabilities $p_v$ and $p_e$ were chosen to efficiently target corners, which are key points for efficient paths. However, setting $p_v$ too high is not relevant, as this would create too much branches of the tree directed towards uninteresting corners. That is why we chose $p_v = 0.4$. It is the same idea for edge sampling : if the probability is too low, we do not focus enough on edges. If it is too high, we overfocus on some edges, even though they are irrelevant for our problem. That is why we chose $p_e = 0.3$, so that we have a fairly exhaustive exploration of edges without trying every precomputed point.
 
 \medskip
 
@@ -408,7 +410,7 @@ The idea is to find a path for the first robot, and then to build a new tree fol
 To do so, we changed every method to take into account if the robot is the first or the second robot.
 
 \begin{algorithm}[!h]
-    \DontPrintSemicodon
+    \DontPrintSemicolon
     \footnotesize
     \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
     \Input{Problem $P$, $\delta_s$, $\delta_r$, $I$, intelligent params, $is\_second\_robot$, $path_{robot1}$}
