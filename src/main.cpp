@@ -39,6 +39,11 @@ const double RRT_DELTA_S = 100.0; // Step size for extending the tree
 const double RRT_DELTA_R = 100.0; // Radius for checking nearby vertices
 const int RRT_MAX_ITERATIONS = 10000; // Maximum number of iterations to build the RRT
 
+// Intelligent sampling parameters
+const bool INTELLIGENT_SAMPLING = true; // Whether to use intelligent sampling  
+const double P_VERTEX_OBSTACLE = 0.5; // Probability of sampling from obstacle vertices
+const double P_EDGE_OBSTACLE = 0.1; // Probability of sampling from points
+const int NUM_POINTS_NEAR_OBSTACLES = 1000; // Number of points to sample near obstacles for intelligent sampling
 
 /*
 @brief saves the given path and tree to a file and optionally visualizes them using a Python script if --plot flag is provided.
@@ -388,7 +393,7 @@ int test_rrt(int argc, char* argv[]){
     // RRT
     RRT rrt(problem); 
     clock_t start_time = clock();
-    auto [best_path, iterations, path_cost] = rrt.rrtPath(problem, RRT_DELTA_S, RRT_DELTA_R, RRT_MAX_ITERATIONS);
+    auto [best_path, iterations, path_cost] = rrt.rrtPath(problem, RRT_DELTA_S, RRT_DELTA_R, RRT_MAX_ITERATIONS, INTELLIGENT_SAMPLING, P_VERTEX_OBSTACLE, P_EDGE_OBSTACLE, NUM_POINTS_NEAR_OBSTACLES);
     clock_t end_time = clock();
     double cpu_time = double(end_time - start_time) / CLOCKS_PER_SEC;
 
@@ -449,7 +454,8 @@ int test_rrt_optimized(int argc, char* argv[]){
 
     cout << "\nCPU time for building RRT: " << cpu_time_build << " seconds" << endl;
     cout << "\nCPU time for optimization: " << cpu_time_optimize << " seconds" << endl;
-
+    cout << "Iterations: " << iterations << endl;
+    
     visualize(argc, argv, optimized_path, &rrt.tree);
     return 0;
 }

@@ -145,3 +145,8 @@ double segmentCollisionDistance(const Point& p1, const Point& p2, const std::vec
     }
     return total_collision_distance;
 }
+
+bool pointOnBoundary(const Point& p, double x_max, double y_max) {
+    return (std::abs(p.x) <= 1e-12 * x_max || std::abs(p.x - x_max) <= 1e-12 * x_max ||
+            std::abs(p.y) <= 1e-12 * y_max || std::abs(p.y - y_max) <= 1e-12 * y_max);
+}

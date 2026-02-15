@@ -18,3 +18,5 @@ bool segmentIntersectsObstacles(const Point& p1, const Point& p2, const std::vec
 
 double segmentCollisionDistance(const Point& p1, const Point& p2, const Obstacle& obs);
 double segmentCollisionDistance(const Point& p1, const Point& p2, const std::vector<Obstacle>& obstacles);
+
+bool pointOnBoundary(const Point& p, double x_max, double y_max);

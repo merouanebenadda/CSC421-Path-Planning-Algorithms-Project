@@ -38,18 +38,51 @@ std::vector<Point> RRT::reconstructPath(int vertex_index) const {
     return path;
 }
 
-int RRT::buildRRT(const Problem& problem, double delta_s, double delta_r, int max_iterations) {
+Point RRT::randomSample_naive(const Problem& problem) const {
+    // Sample a random point uniformly in the environment
+    double x = static_cast<double>(rand()) / RAND_MAX * problem.x_max;
+    double y = static_cast<double>(rand()) / RAND_MAX * problem.y_max;
+    return Point(x, y);
+}
+
+Point RRT::randomSample_intelligent(const Problem& problem, std::vector<Point> verticesObstacles, double p_vertex_obstacle, std::vector<Point> pointsNearObstacles, double p_edge_obstacle) const {
+    // Sample a random point with intelligent method proposed in question 21
+    double r = static_cast<double>(rand()) / RAND_MAX; // random in [0, 1]
+    if (r < p_vertex_obstacle && !verticesObstacles.empty()) {
+        return verticesObstacles[rand() % verticesObstacles.size()]; // Sample from obstacle vertices
+    } else if (r < p_vertex_obstacle + p_edge_obstacle && !pointsNearObstacles.empty()) {
+        return pointsNearObstacles[rand() % pointsNearObstacles.size()]; // Sample from points near obstacles
+    } else {
+        return randomSample_naive(problem); // Sample uniformly from the environment
+    }
+}
+
+int RRT::buildRRT(const Problem& problem, double delta_s, double delta_r, int max_iterations, bool use_intelligent_sampling, double p_vertex_obstacle, double p_edge_obstacle, int num_points_near_obstacles) {
     // Implementation of the RRT algorithm to build the tree
+    
+    std::vector<Point> verticesObstacles;
+    std::vector<Point> pointsNearObstacles;
+    if(use_intelligent_sampling) {
+        std::vector<Point> verticesObstacles = problem.verticesObstacles();
+        std::vector<Point> pointsNearObstacles = problem.pointsNearObstacles(num_points_near_obstacles); 
+    }
+    
     int iterations = 0;
     while(iterations < max_iterations){
-        double x = static_cast<double>(rand()) / RAND_MAX * problem.x_max;
-        double y = static_cast<double>(rand()) / RAND_MAX * problem.y_max;
-        Point vr = Point(x, y);
+        //double x = static_cast<double>(rand()) / RAND_MAX * problem.x_max;
+        //double y = static_cast<double>(rand()) / RAND_MAX * problem.y_max;
+        //Point vr = Point(x, y);
+        
+        Point vr;
+        if(use_intelligent_sampling) {
+            vr = randomSample_intelligent(problem, verticesObstacles, p_vertex_obstacle, pointsNearObstacles, p_edge_obstacle);
+        } else {
+            vr = randomSample_naive(problem);
+        }
 
         if(pointInObstacles(vr, problem.obstacles)){
             continue; // Skip if the random point is inside an obstacle
         }
-
         // Find the nearest vertex in the tree
         int vn_index = 0;
         for (size_t i = 1; i < tree.vertices.size(); i++) {
@@ -110,8 +143,8 @@ int RRT::buildRRT(const Problem& problem, double delta_s, double delta_r, int ma
     return iterations;
 }
 
-std::tuple<std::vector<Point>, int, double> RRT::rrtPath(const Problem& problem, double delta_s, double delta_r, int max_iterations) {
-    int iterations =buildRRT(problem, delta_s, delta_r, max_iterations); 
+std::tuple<std::vector<Point>, int, double> RRT::rrtPath(const Problem& problem, double delta_s, double delta_r, int max_iterations, bool use_intelligent_sampling, double p_vertex_obstacle, double p_edge_obstacle, int num_points_near_obstacles) {
+    int iterations =buildRRT(problem, delta_s, delta_r, max_iterations, use_intelligent_sampling, p_vertex_obstacle, p_edge_obstacle, num_points_near_obstacles); 
     double path_cost = tree.costs.back(); // Cost of the path to the goal (last vertex added)
     return std::make_tuple(reconstructPath(tree.vertices.size() - 1), iterations, path_cost); // The goal point is the last vertex added to the tree
 

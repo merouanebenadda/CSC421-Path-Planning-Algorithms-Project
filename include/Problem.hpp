@@ -26,5 +26,7 @@ public:
     bool isCollision(const Point& p1, const Point& p2) const; // checks if the line segment between p1 and p2 collides with any obstacles
     bool isCollision(const std::vector<Point>& path) const; // checks if a given path collides with any obstacles
     double collisionDistance(const std::vector<Point>& path) const; // calculates the distance travelled into obstacles for a given path
+    std::vector<Point> verticesObstacles() const; // returns a vector of all the vertices of the obstacles that are not on the boundary of the environment
+    std::vector<Point> pointsNearObstacles(double N) const; // returns a vector of points near obstacles. N is the approximate number of desired points.
 };
 
