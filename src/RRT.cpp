@@ -69,9 +69,6 @@ int RRT::buildRRT(const Problem& problem, double delta_s, double delta_r, int ma
     
     int iterations = 0;
     while(iterations < max_iterations){
-        //double x = static_cast<double>(rand()) / RAND_MAX * problem.x_max;
-        //double y = static_cast<double>(rand()) / RAND_MAX * problem.y_max;
-        //Point vr = Point(x, y);
         
         Point vr;
         if(use_intelligent_sampling) {
