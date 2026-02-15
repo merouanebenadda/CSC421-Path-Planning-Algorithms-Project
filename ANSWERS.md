@@ -19,5 +19,9 @@ We chose to implement the solution in C++ for the main algorithmic part, as it a
 
 **Question 14** [src/RRT.cpp](src/RRT.cpp) and [include/RRT.hpp](include/RRT.hpp) for the path reconstruction method.
 
+**Question 17** [src/RRT.cpp](src/RRT.cpp) and [include/RRT.hpp](include/RRT.hpp) for the implementation of the intelligent sampling method.
 
+**Question 19** [src/RRT.cpp](src/RRT.cpp) and [include/RRT.hpp](include/RRT.hpp) for the implementation of the RRT algorithm.
+
+**Question 22** [src/RRT.cpp](src/RRT.cpp) and [include/RRT.hpp](include/RRT.hpp) for the implementation of the RRT for two robots, including the method to check for edge collisions with the path of the first robot.
 
