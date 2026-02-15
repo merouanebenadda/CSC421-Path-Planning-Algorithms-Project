@@ -9,6 +9,34 @@ import argparse
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
+def plot_path_and_tree(ax, path_nums, start, goal, tree, path_label, path_color, tree_color):
+    """Helper function to plot a path and its tree"""
+    if len(path_nums) % 2 != 0:
+        print(f"Error: Invalid path format for {path_label}.")
+        return
+    
+    # Create path points and plot the path
+    path_points = [start] + [(path_nums[i], path_nums[i+1]) for i in range(0, len(path_nums), 2)] + [goal]
+    path_x, path_y = zip(*path_points)
+    ax.plot(path_x, path_y, color=path_color, linewidth=2, label=path_label)
+
+    # Plot the tree structure if available
+    if tree:
+        tree_vertices = list(tree.keys())  # Maintain order for indexing
+        
+        # Plot tree edges
+        for vertex, parents in tree.items():
+            for parent_index in parents:
+                if parent_index >= 0:  # Skip root nodes (parent_index == -1)
+                    parent_vertex = tree_vertices[parent_index]
+                    ax.plot([vertex[0], parent_vertex[0]], [vertex[1], parent_vertex[1]], 
+                            color=tree_color, alpha=0.2, linewidth=0.5)
+        
+        # Plot tree vertices as markers
+        tree_x = [v[0] for v in tree_vertices]
+        tree_y = [v[1] for v in tree_vertices]
+        ax.plot(tree_x, tree_y, marker='x', color=tree_color, markersize=2, alpha=0.4, linestyle='None')
+
 def visualize(scenario_file, path_file=None):
     with open(scenario_file, 'r') as f:
         nums = list(map(float, f.read().split()))
@@ -29,7 +57,7 @@ def visualize(scenario_file, path_file=None):
     obstacles = [obs_data[i:i+4] for i in range(0, len(obs_data), 4)]
 
     # Create figure and axis
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(10, 10))
     ax.set_xlim(0, xmax)
     ax.set_ylim(0, ymax)
     ax.set_aspect('equal')
@@ -42,65 +70,87 @@ def visualize(scenario_file, path_file=None):
         ax.add_patch(rect)
 
     # Plot start and goal points
-    ax.plot(start1[0], start1[1], 'go', label='Start 1')
-    ax.plot(goal1[0], goal1[1], 'ro', label='Goal 1')
-    ax.plot(start2[0], start2[1], 'gx', label='Start 2')
-    ax.plot(goal2[0], goal2[1], 'rx', label='Goal 2')
+    ax.plot(start1[0], start1[1], 'go', markersize=8, label='Start 1')
+    ax.plot(goal1[0], goal1[1], 'ro', markersize=8, label='Goal 1')
+    ax.plot(start2[0], start2[1], 'g^', markersize=8, label='Start 2')
+    ax.plot(goal2[0], goal2[1], 'r^', markersize=8, label='Goal 2')
 
-    # Plot path if provided and see if a tree is included in the path file
+    # Plot path if provided
     if path_file:
         with open(path_file, 'r') as f:
-            # Read all lines and check for the "TREE" marker
             lines = f.readlines()
-            if "TREE\n" in lines:
-                tree_index = lines.index("TREE\n")
+        
+        # Check for two-path format (PATH1, PATH2, TREE1, TREE2)
+        has_two_paths = any("PATH1\n" in line or line.strip() == "PATH1" for line in lines)
+        
+        if has_two_paths:
+            # Parse two-path format
+            path1_nums = []
+            path2_nums = []
+            tree1 = {}
+            tree2 = {}
+            
+            current_section = None
+            
+            for line in lines:
+                line = line.strip()
+                if line == "PATH1":
+                    current_section = "PATH1"
+                elif line == "PATH2":
+                    current_section = "PATH2"
+                elif line == "TREE1":
+                    current_section = "TREE1"
+                elif line == "TREE2":
+                    current_section = "TREE2"
+                elif line and not line.startswith("#"):  # Skip empty lines and comments
+                    if current_section == "PATH1":
+                        path1_nums.extend(map(float, line.split()))
+                    elif current_section == "PATH2":
+                        path2_nums.extend(map(float, line.split()))
+                    elif current_section == "TREE1":
+                        parts = line.split()
+                        if len(parts) >= 3:
+                            x, y = float(parts[0]), float(parts[1])
+                            parent = int(parts[2])
+                            tree1[(x, y)] = [parent]
+                    elif current_section == "TREE2":
+                        parts = line.split()
+                        if len(parts) >= 3:
+                            x, y = float(parts[0]), float(parts[1])
+                            parent = int(parts[2])
+                            tree2[(x, y)] = [parent]
+            
+            # Plot both paths with different colors
+            plot_path_and_tree(ax, path1_nums, start1, goal1, tree1, 'Path 1 (RRT)', 'blue', 'blue')
+            plot_path_and_tree(ax, path2_nums, start1, goal1, tree2, 'Path 2 (RRT)', 'green', 'green')
+        else:
+            # Parse single-path format (original format)
+            if "TREE\n" in lines or any(line.strip() == "TREE" for line in lines):
+                tree_index = next(i for i, line in enumerate(lines) if line.strip() == "TREE")
                 path_lines = lines[:tree_index]
                 tree_lines = lines[tree_index + 1:]
             else:
                 path_lines = lines
                 tree_lines = []
-                
+            
             # Process path points
             path_nums = []
             for line in path_lines:
                 path_nums.extend(map(float, line.split()))
             
             # Process tree data if available
-            tree = {} # Each vertex will be stored as (x, y): parents_list
-            if "TREE\n" in lines:
-                for line in tree_lines:
-                    parts = line.split()
-                    if len(parts) > 2:
-                        x, y = float(parts[0]), float(parts[1])
-                        parents = list(map(int, parts[2:]))
-                        tree[(x, y)] = parents
-        
-        if len(path_nums) % 2 != 0:
-            print("Error: Invalid path file format.")
-            return
-        
-        # Create path points and plot the path
-        path_points = [start1] + [(path_nums[i], path_nums[i+1]) for i in range(0, len(path_nums), 2)] + [goal1]
-        path_x, path_y = zip(*path_points)
-        ax.plot(path_x, path_y, 'b-', label='Path')
-
-        # Optionally, plot the tree structure if available
-        if tree:
-            tree_vertices = list(tree.keys())  # Maintain order for indexing
+            tree = {}
+            for line in tree_lines:
+                parts = line.split()
+                if len(parts) >= 3:
+                    x, y = float(parts[0]), float(parts[1])
+                    parent = int(parts[2])
+                    tree[(x, y)] = [parent]
             
-            # Plot tree edges
-            for vertex, parents in tree.items():
-                for parent_index in parents:
-                    if parent_index >= 0:  # Skip root nodes (parent_index == -1)
-                        parent_vertex = tree_vertices[parent_index] # Get the parent vertex using the index
-                        ax.plot([vertex[0], parent_vertex[0]], [vertex[1], parent_vertex[1]], 'c-', alpha=0.3, linewidth=0.5) # Plot tree edges
-            
-            # Plot tree vertices as x markers
-            tree_x = [v[0] for v in tree_vertices]
-            tree_y = [v[1] for v in tree_vertices]
-            ax.plot(tree_x, tree_y, 'cx', markersize=3, alpha=0.5, label='Tree')
+            # Plot single path
+            plot_path_and_tree(ax, path_nums, start1, goal1, tree, 'Path (RRT)', 'blue', 'blue')
 
-    ax.legend()
+    ax.legend(loc='best')
     plt.title("Environment Visualization")
     plt.xlabel("X-axis")
     plt.ylabel("Y-axis")
