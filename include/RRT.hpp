@@ -21,8 +21,8 @@ public:
 
     RRT(const Problem& problem);
     
-    void addVertex(const Point& vertex, int parent_index); // Adds a vertex to the tree with the given parent index
-    std::vector<Point> reconstructPath(int vertex_index) const; // Reconstructs the path from the root to the given vertex index
+    void addVertex(const Point& vertex, int parent_index, bool is_second_robot=false    ); // Adds a vertex to the tree with the given parent index
+    std::vector<Point> reconstructPath(int vertex_index, bool is_second_robot=false) const; // Reconstructs the path from the root to the given vertex index
     Point randomSample_naive(const Problem& problem) const; // Samples a random point uniformly in the environment
     Point randomSample_intelligent(const Problem& problem, std::vector<Point> verticesObstacles, double p_vertex_obstacle, std::vector<Point> pointsNearObstacles, double p_edge_obstacle) const; // Samples a random point with intelligent method proposed in question 21
     bool edgeCollisionPath(const Problem& problem, const Point& p1, const double cost1, const Point& p2, const std::vector<Point>& path) const; // Checks if the edge between p1 and p2 intersects with any segment of the path

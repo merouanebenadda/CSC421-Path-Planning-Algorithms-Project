@@ -20,19 +20,33 @@ RRT::RRT(const Problem& problem) : tree(problem.start1), tree2(problem.start2) {
     // The constructor initializes the tree with the start point
 }
 
-void RRT::addVertex(const Point& vertex, int parent_index) {
-    tree.vertices.push_back(vertex);
-    tree.parents.push_back(parent_index);
-    tree.costs.push_back(tree.costs[parent_index] + euclideanDistance(tree.vertices[parent_index], vertex));
+void RRT::addVertex(const Point& vertex, int parent_index, bool is_second_robot) {
+    if(is_second_robot) {
+        tree2.vertices.push_back(vertex);
+        tree2.parents.push_back(parent_index);
+        tree2.costs.push_back(tree2.costs[parent_index] + euclideanDistance(tree2.vertices[parent_index], vertex));
+    } else {
+        tree.vertices.push_back(vertex);
+        tree.parents.push_back(parent_index);
+        tree.costs.push_back(tree.costs[parent_index] + euclideanDistance(tree.vertices[parent_index], vertex));
+    }
 }
 
-std::vector<Point> RRT::reconstructPath(int vertex_index) const {
+std::vector<Point> RRT::reconstructPath(int vertex_index, bool is_second_robot) const {
     // Reconstruct the path (first and last points excluded) from the root to the given vertex index
     std::vector<Point> path;
-    vertex_index = tree.parents[vertex_index]; // Start from the parent of the goal vertex
-    while (tree.parents[vertex_index] != -1) {
-        path.push_back(tree.vertices[vertex_index]);
-        vertex_index = tree.parents[vertex_index];
+    if(is_second_robot) {
+        vertex_index = tree2.parents[vertex_index]; // Start from the parent of the goal vertex
+        while (tree2.parents[vertex_index] != -1) {
+            path.push_back(tree2.vertices[vertex_index]);
+            vertex_index = tree2.parents[vertex_index];
+        }
+    } else {
+        vertex_index = tree.parents[vertex_index]; // Start from the parent of the goal vertex
+        while (tree.parents[vertex_index] != -1) {
+            path.push_back(tree.vertices[vertex_index]);
+            vertex_index = tree.parents[vertex_index];
+        }
     }
     std::reverse(path.begin(), path.end()); // Reverse the path to get it from start to goal
     return path;
@@ -165,9 +179,9 @@ std::tuple<std::vector<Point>, int, double> RRT::rrtPath(const Problem& problem,
     double path_cost = tree.costs.back(); // Cost of the path to the goal (last vertex added)
     if(is_second_robot) {
         path_cost = tree2.costs.back();
-        return std::make_tuple(reconstructPath(tree2.vertices.size() - 1), iterations, path_cost); // The goal point is the last vertex added to the tree
+        return std::make_tuple(reconstructPath(tree2.vertices.size() - 1, true), iterations, path_cost); // The goal point is the last vertex added to the tree
     }else {
-        return std::make_tuple(reconstructPath(tree.vertices.size() - 1), iterations, path_cost); // The goal point is the last vertex added to the tree
+        return std::make_tuple(reconstructPath(tree.vertices.size() - 1, false), iterations, path_cost); // The goal point is the last vertex added to the tree
     }
 }
 

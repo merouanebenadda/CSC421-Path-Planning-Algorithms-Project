@@ -403,8 +403,7 @@ The probabilities $\texttt{p\_v}$ and $\texttt{p\_e}$ were chosen to efficiently
 
 When considering both methods developed previously, RRT seems to the most appropriate when there are two robots. Indeed, it appears to be the most efficient, and it is editable quite easily to consider a second robot.
 
-The idea is to find a path for the first robot, and then to build a new tree following RRT rules with a new constraint : the new tree should not cut the path of the first robot. To prevent the first robot to take a path too close from obstacles, which would impede the second robot to find his way to the goal point, the problem data given to the first robot is quite different : all obstacles are enlarged of $3R$ in each direction, so that there remains enough space for the second robot to go between the first one's path and the real obstacle.
-
+The idea is to find a path for the first robot, and then to build a new tree following RRT rules with a new constraint : the new tree should not cut the path of the first robot at a time when it could. To do so, and in order to avoid delay changes due to rewiring, this second tree will be build without rewiring. If the new tree crosses the path, we will check that the distance from the root is not distant from the one one the path from less than $2R$, so that robots won't collide.
 \medskip
 
 \textbf{Question 24.}
