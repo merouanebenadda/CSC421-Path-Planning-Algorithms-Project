@@ -279,115 +279,6 @@ To do so, we use Algorithm \ref{alg:intelligent_sample} to sample points next to
 
 The sampled points are chosen among pre-computed vectors of satisfying points. They are made with Algorithms \ref{verticesObstacles} and \ref{PointsNearObstacles}.
 
-\begin{algorithm}[!h]
-    \DontPrintSemicolon
-    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
-    \Input{Problem $P$, step size $\delta_s$, radius $\delta_r$, max iterations $I$, \\
-           bool $use\_intelligent\_sampling$, probabilities $p_{vertex}$, $p_{edge}$, \\
-           number of edge samples $n_{edge}$}
-    \Output{Number of iterations taken to build tree}
-    \BlankLine
-    
-    \tcp{Precompute sampling points if using intelligent sampling}
-    \If{$use\_intelligent\_sampling$}{
-        $vertices_{obstacles} \leftarrow P.\textsc{VerticesObstacles}()$\;
-        $points_{near\_obstacles} \leftarrow P.\textsc{PointsNearObstacles}(n_{edge})$\;
-    }
-
-    
-    $iterations \leftarrow 0$\;
-    \While{$iterations < I$}{
-
-        \tcp{Sample point according to strategy}
-        \eIf{$use\_intelligent\_sampling$}{
-            $v_r \leftarrow \textsc{RandomSample\_Intelligent}(P, vertices_{obstacles}, p_{vertex}, points_{near\_obstacles}, p_{edge})$
-        }{
-            $v_r \leftarrow \textsc{RandomSample\_Naive}(P)$\;
-        }
-        
-        \tcp{... rest of BuildRRT algorithm unchanged (see Algorithm \ref{alg:rrt})}
-        \tcp{Find nearest, steer, choose parent, rewire, check goal...}
-        \BlankLine
-        
-        $iterations \leftarrow iterations + 1$\;
-    }
-    
-    \Return{$iterations$}
-    \caption{BuildRRT - with Intelligent Sampling Option}\label{alg:rrt_intelligent}
-\end{algorithm}
-
-\begin{algorithm}[!h]
-    \DontPrintSemicolon
-    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
-    \SetKwProg{Fn}{Function}{:}{}
-    
-    \Fn{\textsc{RandomSample\_Intelligent}$(P, V_{obs}, p_v, E_{obs}, p_e)$}{
-        \Input{Problem $P$, obstacle vertices $V_{obs}$, probability $p_v$, edge points $E_{obs}$, probability $p_e$}
-        \Output{Sampled point}
-        $r \leftarrow$ random$(0, 1)$\;
-        \eIf{$r < p_v$ \textbf{and} $V_{obs} \neq \emptyset$}{
-            \Return{random element from $V_{obs}$}\tcp*{Near vertex}
-        }{
-            \eIf{$r < p_v + p_e$ \textbf{and} $E_{obs} \neq \emptyset$}{
-                \Return{random element from $E_{obs}$}\tcp*{Near edge}
-            }{
-                \Return{\textsc{RandomSample\_Naive}$(P)$}\tcp*{Uniform}
-            }
-        }
-    }
-    \caption{RandomSample\_Intelligent - Strategic Sampling}\label{alg:intelligent_sample}
-\end{algorithm}
-
-\begin{algorithm}[!h]
-    \DontPrintSemicolon
-    \footnotesize
-    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
-    \SetKwProg{Fn}{Function}{:}{}
-    \Fn{\textsc{VerticesObstacles}$(obstacles, x_{max}, y_{max})$}{
-        \Input{List of obstacles, environment bounds}
-        \Output{Vertices slightly outside obstacles}
-        $V \leftarrow \emptyset$\;
-        \ForEach{obstacle $obs$ in $obstacles$}{
-            $corners \leftarrow$ 4 corner points of $obs$\;
-            \For{$i \gets 0$ \KwTo $3$}{
-                \If{$corners[i]$ not on environment boundary}{
-                    $p \leftarrow$ shift $corners[i]$ slightly outward\tcp*{$\epsilon = 10^{-4}$}
-                    Append $p$ to $V$\;
-                }
-            }
-        }
-        \Return{$V$}
-    }
-    \caption{VerticesObstacles - Extract Obstacle Vertices}
-    \label{verticesObstacles}
-\end{algorithm}
-
-\begin{algorithm}[!h]
-    \DontPrintSemicolon
-    \footnotesize
-    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
-    \SetKwProg{Fn}{Function}{:}{}
-    \Fn{\textsc{PointsNearObstacles}$(obstacles, N, x_{max}, y_{max})$}{
-        \Input{Obstacles, target count $N$, environment bounds}
-        \Output{Points distributed along obstacle edges}
-        $E \leftarrow \emptyset$\;
-        $P_{total} \leftarrow \sum_{obs} 2(obs.l_x + obs.l_y)$\tcp*{Total perimeter}
-        \ForEach{obstacle $obs$ in $obstacles$}{
-            $P_{obs} \leftarrow 2(obs.l_x + obs.l_y)$\;
-            $n \leftarrow \lfloor N \cdot (P_{obs} / P_{total}) \rfloor$\tcp*{Points proportional to perimeter}
-            \For{$i \gets 0$ \KwTo $n-1$}{
-                $t \leftarrow i / n$\;
-                $p \leftarrow$ point at position $t$ along perimeter of $obs$, shifted slightly outward\;
-                \If{$p$ valid (not on boundary, not inside obstacles)}{
-                    Append $p$ to $E$\;
-                }
-            }
-        }
-        \Return{$E$}
-    }
-    \caption{PointsNearObstacles - Sample Obstacle Edges}
-    \label{PointsNearObstacles}
-\end{algorithm}
 
 \medskip
 
@@ -409,48 +300,9 @@ The idea is to find a path for the first robot, and then to build a new tree fol
 
 To do so, we changed every method to take into account if the robot is the first or the second robot.
 
-\begin{algorithm}[!h]
-    \DontPrintSemicolon
-    \footnotesize
-    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
-    \Input{Problem $P$, $\delta_s$, $\delta_r$, $I$, intelligent params, $is\_second\_robot$, $path_{robot1}$}
-    \Output{Iterations count}
-    $tree_{cur} \leftarrow is\_second\_robot$ ? $tree_2$ : $tree_1$\;
-    \If{intelligent sampling}{ Precompute $V_{obs}$ and $E_{obs}$\;}
-    $iterations \leftarrow 0$\;
-    \While{$iterations < I$}{
-        $v_r \leftarrow$ sample point (intelligent or naive)\;
-        \If{$v_r$ in obstacle}{\textbf{continue}\;}
-        $v_n \leftarrow$ nearest vertex in $tree_{cur}$ to $v_r$\;
-        $v \leftarrow$ steer from $v_n$ toward $v_r$ at max distance $\delta_s$\;
-        \tcp{Choose best parent with collision checks}
-        $parent \leftarrow -1$\;
-        \If{no collision($v_n$, $v$) \textbf{and not} edge collision with $path_{robot1}$}{
-            $parent \leftarrow v_n$\;
-        }
-        \ForEach{$v_i$ in $tree_{cur}$ within radius $\delta_r$ of $v$}{
-            \If{no collision($v_i$, $v$) \textbf{and not} edge collision with $path_{robot1}$}{
-                \If{$parent = -1$ \textbf{or} cost via $v_i$ is better}{
-                    $parent \leftarrow v_i$\;
-                }
-            }
-        }
-        \If{$parent = -1$}{\textbf{continue}\;}
-        \textsc{AddVertex}$(tree_{cur}, v, parent)$; $idx_v \leftarrow |tree_{cur}| - 1$\;
-        \If{\textbf{not} $is\_second\_robot$}{
-            Rewire neighbors of $v$ in $tree_{cur}$\tcp*{Only for robot 1}
-        }
-        \If{goal reachable from $v$}{
-            \textsc{AddVertex}$(tree_{cur}, goal, idx_v)$; \textbf{break}\;
-        }
-        $iterations \leftarrow iterations + 1$\;
-    }
-    \Return{$iterations$}
-    \caption{BuildRRT - Multi-Robot Path Planning}\label{alg:rrt_2robots}
-\end{algorithm}
-\medskip
 
-\textbf{Question 24.}
+
+\textbf{Question 24.} Unfortunately, we were not able to implement the multi-robot version of RRT. We had the pseudocode and the general idea of the implementation, but we were not able to make it work because of a segmentation fault that we could not debug in time.
 
 
 
@@ -616,6 +468,116 @@ We also used GitHub Copilot to help us with some of the redundant code, such as 
     \label{RRTPath}
 \end{algorithm}
 
+\begin{algorithm}[H]
+    \DontPrintSemicolon
+    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+    \Input{Problem $P$, step size $\delta_s$, radius $\delta_r$, max iterations $I$, \\
+           bool $use\_intelligent\_sampling$, probabilities $p_{vertex}$, $p_{edge}$, \\
+           number of edge samples $n_{edge}$}
+    \Output{Number of iterations taken to build tree}
+    \BlankLine
+    
+    \tcp{Precompute sampling points if using intelligent sampling}
+    \If{$use\_intelligent\_sampling$}{
+        $vertices_{obstacles} \leftarrow P.\textsc{VerticesObstacles}()$\;
+        $points_{near\_obstacles} \leftarrow P.\textsc{PointsNearObstacles}(n_{edge})$\;
+    }
+
+    
+    $iterations \leftarrow 0$\;
+    \While{$iterations < I$}{
+
+        \tcp{Sample point according to strategy}
+        \eIf{$use\_intelligent\_sampling$}{
+            $v_r \leftarrow \textsc{RandomSample\_Intelligent}(P, vertices_{obstacles}, p_{vertex}, points_{near\_obstacles}, p_{edge})$
+        }{
+            $v_r \leftarrow \textsc{RandomSample\_Naive}(P)$\;
+        }
+        
+        \tcp{... rest of BuildRRT algorithm unchanged (see Algorithm \ref{alg:rrt})}
+        \tcp{Find nearest, steer, choose parent, rewire, check goal...}
+        \BlankLine
+        
+        $iterations \leftarrow iterations + 1$\;
+    }
+    
+    \Return{$iterations$}
+    \caption{BuildRRT - with Intelligent Sampling Option}\label{alg:rrt_intelligent}
+\end{algorithm}
+
+\begin{algorithm}[H]
+    \DontPrintSemicolon
+    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+    \SetKwProg{Fn}{Function}{:}{}
+    
+    \Fn{\textsc{RandomSample\_Intelligent}$(P, V_{obs}, p_v, E_{obs}, p_e)$}{
+        \Input{Problem $P$, obstacle vertices $V_{obs}$, probability $p_v$, edge points $E_{obs}$, probability $p_e$}
+        \Output{Sampled point}
+        $r \leftarrow$ random$(0, 1)$\;
+        \eIf{$r < p_v$ \textbf{and} $V_{obs} \neq \emptyset$}{
+            \Return{random element from $V_{obs}$}\tcp*{Near vertex}
+        }{
+            \eIf{$r < p_v + p_e$ \textbf{and} $E_{obs} \neq \emptyset$}{
+                \Return{random element from $E_{obs}$}\tcp*{Near edge}
+            }{
+                \Return{\textsc{RandomSample\_Naive}$(P)$}\tcp*{Uniform}
+            }
+        }
+    }
+    \caption{RandomSample\_Intelligent - Strategic Sampling}\label{alg:intelligent_sample}
+\end{algorithm}
+
+\begin{algorithm}[H]
+    \DontPrintSemicolon
+    \footnotesize
+    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+    \SetKwProg{Fn}{Function}{:}{}
+    \Fn{\textsc{VerticesObstacles}$(obstacles, x_{max}, y_{max})$}{
+        \Input{List of obstacles, environment bounds}
+        \Output{Vertices slightly outside obstacles}
+        $V \leftarrow \emptyset$\;
+        \ForEach{obstacle $obs$ in $obstacles$}{
+            $corners \leftarrow$ 4 corner points of $obs$\;
+            \For{$i \gets 0$ \KwTo $3$}{
+                \If{$corners[i]$ not on environment boundary}{
+                    $p \leftarrow$ shift $corners[i]$ slightly outward\tcp*{$\epsilon = 10^{-4}$}
+                    Append $p$ to $V$\;
+                }
+            }
+        }
+        \Return{$V$}
+    }
+    \caption{VerticesObstacles - Extract Obstacle Vertices}
+    \label{verticesObstacles}
+\end{algorithm}
+
+\begin{algorithm}[H]
+    \DontPrintSemicolon
+    \footnotesize
+    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+    \SetKwProg{Fn}{Function}{:}{}
+    \Fn{\textsc{PointsNearObstacles}$(obstacles, N, x_{max}, y_{max})$}{
+        \Input{Obstacles, target count $N$, environment bounds}
+        \Output{Points distributed along obstacle edges}
+        $E \leftarrow \emptyset$\;
+        $P_{total} \leftarrow \sum_{obs} 2(obs.l_x + obs.l_y)$\tcp*{Total perimeter}
+        \ForEach{obstacle $obs$ in $obstacles$}{
+            $P_{obs} \leftarrow 2(obs.l_x + obs.l_y)$\;
+            $n \leftarrow \lfloor N \cdot (P_{obs} / P_{total}) \rfloor$\tcp*{Points proportional to perimeter}
+            \For{$i \gets 0$ \KwTo $n-1$}{
+                $t \leftarrow i / n$\;
+                $p \leftarrow$ point at position $t$ along perimeter of $obs$, shifted slightly outward\;
+                \If{$p$ valid (not on boundary, not inside obstacles)}{
+                    Append $p$ to $E$\;
+                }
+            }
+        }
+        \Return{$E$}
+    }
+    \caption{PointsNearObstacles - Sample Obstacle Edges}
+    \label{PointsNearObstacles}
+\end{algorithm}
+
 \section{Visualization}
 
 \begin{figure}[ht]
@@ -628,6 +590,47 @@ We also used GitHub Copilot to help us with some of the redundant code, such as 
 \caption{Test scenarios 0-4}
 \label{fig:scenarios}
 \end{figure}
+
+\begin{algorithm}[H]
+    \DontPrintSemicolon
+    \footnotesize
+    \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+    \Input{Problem $P$, $\delta_s$, $\delta_r$, $I$, intelligent params, $is\_second\_robot$, $path_{robot1}$}
+    \Output{Iterations count}
+    $tree_{cur} \leftarrow is\_second\_robot$ ? $tree_2$ : $tree_1$\;
+    \If{intelligent sampling}{ Precompute $V_{obs}$ and $E_{obs}$\;}
+    $iterations \leftarrow 0$\;
+    \While{$iterations < I$}{
+        $v_r \leftarrow$ sample point (intelligent or naive)\;
+        \If{$v_r$ in obstacle}{\textbf{continue}\;}
+        $v_n \leftarrow$ nearest vertex in $tree_{cur}$ to $v_r$\;
+        $v \leftarrow$ steer from $v_n$ toward $v_r$ at max distance $\delta_s$\;
+        \tcp{Choose best parent with collision checks}
+        $parent \leftarrow -1$\;
+        \If{no collision($v_n$, $v$) \textbf{and not} edge collision with $path_{robot1}$}{
+            $parent \leftarrow v_n$\;
+        }
+        \ForEach{$v_i$ in $tree_{cur}$ within radius $\delta_r$ of $v$}{
+            \If{no collision($v_i$, $v$) \textbf{and not} edge collision with $path_{robot1}$}{
+                \If{$parent = -1$ \textbf{or} cost via $v_i$ is better}{
+                    $parent \leftarrow v_i$\;
+                }
+            }
+        }
+        \If{$parent = -1$}{\textbf{continue}\;}
+        \textsc{AddVertex}$(tree_{cur}, v, parent)$; $idx_v \leftarrow |tree_{cur}| - 1$\;
+        \If{\textbf{not} $is\_second\_robot$}{
+            Rewire neighbors of $v$ in $tree_{cur}$\tcp*{Only for robot 1}
+        }
+        \If{goal reachable from $v$}{
+            \textsc{AddVertex}$(tree_{cur}, goal, idx_v)$; \textbf{break}\;
+        }
+        $iterations \leftarrow iterations + 1$\;
+    }
+    \Return{$iterations$}
+    \caption{BuildRRT - Multi-Robot Path Planning}\label{alg:rrt_2robots}
+\end{algorithm}
+\medskip
 
 
 \end{document}
