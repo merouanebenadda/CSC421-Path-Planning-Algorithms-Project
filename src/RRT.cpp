@@ -2,6 +2,7 @@
 #include <utility>
 #include <math.h>
 #include <functional>
+#include <algorithm>
 
 #include "RRT.hpp"
 #include "Problem.hpp"
@@ -25,11 +26,14 @@ void RRT::addVertex(const Point& vertex, int parent_index) {
 }
 
 std::vector<Point> RRT::reconstructPath(int vertex_index) const {
+    // Reconstruct the path (first and last points excluded) from the root to the given vertex index
     std::vector<Point> path;
-    while (vertex_index != -1) {
+    vertex_index = tree.parents[vertex_index]; // Start from the parent of the goal vertex
+    while (tree.parents[vertex_index] != -1) {
         path.push_back(tree.vertices[vertex_index]);
         vertex_index = tree.parents[vertex_index];
     }
+    std::reverse(path.begin(), path.end()); // Reverse the path to get it from start to goal
     return path;
 }
 
